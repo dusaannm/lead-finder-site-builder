@@ -4,6 +4,7 @@ import os
 import random
 import sys
 import time
+import uuid
 from pathlib import Path
 
 import requests
@@ -79,7 +80,10 @@ def _cached_hits(query, options):
     path = _cache_file(query)
     if not path.exists():
         return None
-    record = json.loads(path.read_text(encoding="utf-8"))
+    try:
+        record = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
     if time.time() - record["saved"] > options["search_cache_hours"] * 3600:
         return None
     return record["hits"]
@@ -88,7 +92,12 @@ def _cached_hits(query, options):
 def _remember_hits(query, hits):
     path = _cache_file(query)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({"saved": time.time(), "hits": hits}, ensure_ascii=False), encoding="utf-8")
+    unfinished = path.with_suffix(".{}.tmp".format(uuid.uuid4().hex))
+    unfinished.write_text(json.dumps({"saved": time.time(), "hits": hits}, ensure_ascii=False), encoding="utf-8")
+    try:
+        unfinished.replace(path)
+    except OSError:
+        unfinished.unlink(missing_ok=True)
 
 
 def _search_pixabay(query, key, options):

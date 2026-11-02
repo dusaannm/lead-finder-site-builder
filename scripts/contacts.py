@@ -84,7 +84,11 @@ def is_their_profile(lead, url, options):
     if handle.isdigit():
         return True
     whole_name = _compact(lead.get("name"), options["generic_name_words"])
-    return whole_name in handle or any(word in handle for word in _distinctive_words(lead, options))
+    if whole_name in handle or any(word in handle for word in _distinctive_words(lead, options)):
+        return True
+    name_words = [word.rstrip("s") for word in lead_store.to_slug(lead.get("name") or "", "").split("-")]
+    long_words = [word for word in name_words if len(word) > options["min_name_word"]]
+    return sum(word in handle for word in long_words) >= options["name_words_in_handle"]
 
 
 def _own_mail_first(emails, site_host):

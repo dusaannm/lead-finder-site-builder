@@ -52,6 +52,10 @@ class TheirProfile(unittest.TestCase):
         lead = {"name": "Miami Bakery", "address": "1 Main St, Miami, FL 33125"}
         self.assertFalse(contacts.is_their_profile(lead, "https://www.instagram.com/dbakers_miami/", self.options))
 
+    def test_two_words_of_the_name_are_enough_even_when_one_is_the_place(self):
+        lead = {"name": "Q Nails at Georgesville Square", "address": "1 Georgesville Square Dr, Columbus, OH"}
+        self.assertTrue(contacts.is_their_profile(lead, "https://www.instagram.com/qnailsgeorgesville/", self.options))
+
     def test_a_numbered_page_cannot_be_judged_and_stays(self):
         self.assertTrue(contacts.is_their_profile(self.lead, "https://www.facebook.com/61557244874009/", self.options))
 

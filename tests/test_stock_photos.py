@@ -40,6 +40,18 @@ class Pixabay(unittest.TestCase):
         self.assertEqual(get.call_count, 1)
         self.assertEqual(first, second)
 
+    def test_a_damaged_cache_is_searched_again(self):
+        reply = mock.Mock(status_code=200)
+        reply.json.return_value = {"hits": [HIT]}
+        with tempfile.TemporaryDirectory() as folder, mock.patch.object(find_stock_photos, "ROOT", Path(folder)):
+            cached = find_stock_photos._cache_file("bread")
+            cached.parent.mkdir(parents=True)
+            cached.write_text('{"saved": 1, "hits": []}]', encoding="utf-8")
+            with mock.patch.object(find_stock_photos.requests, "get", return_value=reply) as get:
+                find_stock_photos._search_pixabay("bread", "key", OPTIONS)
+            self.assertEqual(get.call_count, 1)
+            self.assertEqual(len(list(cached.parent.iterdir())), 1)
+
     def test_a_refused_key_says_so_without_showing_it(self):
         reply = mock.Mock(status_code=400)
         with tempfile.TemporaryDirectory() as folder, mock.patch.object(find_stock_photos, "ROOT", Path(folder)):
