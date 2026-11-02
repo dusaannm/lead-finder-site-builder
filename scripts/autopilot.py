@@ -441,7 +441,12 @@ def prepare(place_id, city=None, trade="", settings=None, collect=None, on_event
     path = answers_file(lead["place_id"])
     previous = _read_json(path)
     if city is None:
-        city = {"name": previous.get("city", ""), "country": previous.get("country", ""), "language": ""}
+        city = {
+            "name": previous.get("city", ""),
+            "country": previous.get("country", ""),
+            "currency": previous.get("currency", ""),
+            "language": "",
+        }
         city["language"] = previous.get("language", "") if opts["site"]["language"].lower() == "city" else ""
 
     folder = stock_folder(lead["name"])
@@ -472,6 +477,8 @@ def prepare(place_id, city=None, trade="", settings=None, collect=None, on_event
         answers["city"] = city["name"]
     if city.get("country"):
         answers["country"] = city["country"]
+    if city.get("currency"):
+        answers["currency"] = city["currency"]
     answers["category"] = lead.get("category", "")
     _write_json(path, answers)
     recent = recent_designs(lead.get("category", ""), settings)
@@ -735,7 +742,10 @@ def _not_logged_in(reply):
 
 
 def _end(process):
-    process.terminate()
+    if os.name == "nt":
+        subprocess.run(["taskkill", "/T", "/F", "/PID", str(process.pid)], capture_output=True)
+    else:
+        process.terminate()
     try:
         process.wait(timeout=10)
     except subprocess.TimeoutExpired:

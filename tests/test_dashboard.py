@@ -1,6 +1,9 @@
 import json
+import os
+import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -82,6 +85,39 @@ class Cities(unittest.TestCase):
         oregon = {"name": "Portland", "state": "Oregon"}
         self.assertEqual(autopilot.search_text("barber", maine), "barber Portland Maine")
         self.assertNotEqual(night_shift.pair_key(maine, "barber"), night_shift.pair_key(oregon, "barber"))
+
+
+class Stopping(unittest.TestCase):
+    @unittest.skipUnless(os.name == "nt", "a wrapper process is how Claude Code starts on Windows")
+    def test_a_builder_behind_a_wrapper_ends_too(self):
+        with tempfile.TemporaryDirectory() as folder:
+            marker = Path(folder) / "pid.txt"
+            child = "import os,time;open(r'{}','w').write(str(os.getpid()));time.sleep(60)".format(marker)
+            process = subprocess.Popen(["cmd", "/c", sys.executable, "-c", child])
+            while not (marker.exists() and marker.read_text()):
+                time.sleep(0.05)
+            autopilot._end(process)
+            time.sleep(0.3)
+            self.assertFalse(shift_control.is_alive(int(marker.read_text())))
+
+
+class Currency(unittest.TestCase):
+    def test_the_builder_gets_the_currency_of_the_city_chosen_before_it(self):
+        with tempfile.TemporaryDirectory() as folder:
+            settings = json.loads(json.dumps(SETTINGS))
+            answers = Path(folder) / "answers.json"
+            lead = {"place_id": "p", "name": "Kvety", "category": "florist"}
+            stock = Path(folder) / "stock"
+            stock.mkdir()
+            (stock / "sources.json").write_text("{}", encoding="utf-8")
+            with mock.patch.object(autopilot.build_brief, "find_lead", return_value=(lead, None)), mock.patch.object(
+                autopilot, "answers_file", return_value=answers
+            ), mock.patch.object(autopilot, "stock_folder", return_value=stock), mock.patch.object(
+                autopilot, "save_reference_photo", return_value=""
+            ):
+                autopilot.prepare("p", {"name": "Prague", "country": "Czechia", "language": "Czech", "currency": "€"}, "florist", settings)
+                again = autopilot.prepare("p", settings=settings)
+            self.assertTrue(again["price"].startswith("€"))
 
 
 class Autopilot(unittest.TestCase):
