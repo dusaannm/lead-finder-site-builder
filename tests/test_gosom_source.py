@@ -41,19 +41,19 @@ def maps_row(**fields):
 
 class LeadFromRow(unittest.TestCase):
     def test_fields_match_what_the_rest_of_the_tool_reads(self):
-        lead = gosom.lead_from_row(maps_row(), QUALITY)
+        lead = gosom.lead_from_row(maps_row(), QUALITY, SETTINGS["gosom"])
         self.assertEqual(lead["rating"], 4.8)
         self.assertEqual(lead["category"], "coffee_shop")
         self.assertEqual(lead["website"], "")
         self.assertEqual(lead["opening_hours"], "Monday Closed; Friday 7 AM–5:30 PM")
 
     def test_a_facebook_page_is_a_contact_and_not_a_website(self):
-        lead = gosom.lead_from_row(maps_row(web_site="https://www.facebook.com/captainbakery"), QUALITY)
+        lead = gosom.lead_from_row(maps_row(web_site="https://www.facebook.com/captainbakery"), QUALITY, SETTINGS["gosom"])
         self.assertEqual(lead["website"], "")
         self.assertEqual(lead["facebook"], "https://www.facebook.com/captainbakery")
 
     def test_a_business_without_reviews_has_no_rating(self):
-        lead = gosom.lead_from_row(maps_row(review_count=0, review_rating=0), QUALITY)
+        lead = gosom.lead_from_row(maps_row(review_count=0, review_rating=0), QUALITY, SETTINGS["gosom"])
         self.assertIsNone(lead["rating"])
         self.assertEqual(lead["review_count"], 0)
 

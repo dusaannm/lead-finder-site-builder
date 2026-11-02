@@ -237,9 +237,10 @@ edited.
   the page, and the brief is what says so.
 - Every visible word is in {language}.
 - Real, from `brief.md`, and never changed: {known_facts}.
-- Not known: {unknown_facts}. Write an obvious placeholder in {language} for
-  each and list every placeholder in an HTML comment at the bottom of
-  `index.html`. Never invent a review or a person.
+- Not known: {unknown_facts}. The page has to read as finished, so never leave a
+  bracketed note or an empty slot on it. Write around what is unknown or leave
+  that element out, and list what the owner could add in an HTML comment at the
+  bottom of `index.html`. Never invent a review or a person.
 - No lorem ipsum anywhere.
 """
 
@@ -335,6 +336,21 @@ def _fact_split(lead):
     return _listed(known), _listed(unknown + ["prices", "staff names", "what any reviewer wrote"])
 
 
+def _known_about(lead):
+    category = (lead.get("category") or "").replace("_", " ").strip()
+    description = (lead.get("description") or "").strip()
+    reviews = [item.strip() for item in (lead.get("review_notes") or "").split(" | ") if item.strip()]
+    lines = []
+    if category:
+        lines.append("- Listed as: {}".format(category))
+    if description:
+        lines.append("- Described as: {}".format(description))
+    if reviews:
+        lines.append("- What customers mention, for your understanding only:")
+        lines.extend("  - {}".format(review) for review in reviews)
+    return "\n".join(lines) or "- Nothing beyond the table above."
+
+
 def _rating_cell(lead, answers):
     rating = str(lead.get("rating") or "").strip()
     if not rating:
@@ -367,6 +383,10 @@ def render_brief(lead, answers, assets_dir, settings):
 | Lead score | {score} |
 | Google Maps | {maps} |
 | place_id | {place_id} |
+
+## What is known about the business
+
+{known_about}
 
 ## Why this business
 
@@ -450,12 +470,22 @@ job.
 languages. Do not leave lorem ipsum anywhere — write real copy for this
 business, in the voice of a {trade} that wants local customers.
 
+**What this business actually is.** Read "What is known about the business"
+above before you write a word or choose a colour. The copy, the palette, the
+order of the sections and the choice of photographs all follow from it. Name the
+products people actually mention. A Chinese sweet shop known for egg tarts must
+not read like a French boulangerie. Those notes come from customer reviews: use
+them to learn what is sold and loved, and never quote them, paraphrase a named
+person, or present them as testimonials.
+
 **What to invent and what not to.** Real, taken from the table above and never
-changed: {known_facts}. Not known: {unknown_facts}. Where a section needs
-something not known, write an obvious placeholder in {language} that the owner
-can fill in, and mark those spots in a `<!-- -->` comment list at the bottom of
-`index.html` so they are easy to find. Never invent a fake review or a fake
-person.
+changed: {known_facts}. Not known: {unknown_facts}. Describe only products and
+qualities that "What is known" supports; where it says nothing, stay general
+rather than making up crusty loaves or family recipes. The page has to read as
+finished: no bracketed notes, no "Owner:" text, no empty lists and no section
+that exists only to be filled in later. Write around what is unknown, or leave
+that element out. List what the owner could add in a `<!-- -->` comment at the
+bottom of `index.html`. Never invent a fake review or a fake person.
 
 **Sections, in this order.**
 
@@ -466,6 +496,23 @@ Build the palette from that description{colour_hint}. Pick one accent colour
 and use it for every call to action, nothing else. Two typefaces at most.
 Generous whitespace, a consistent spacing scale, and a single border radius
 used everywhere.
+
+**Design that does not look like a template.** Someone who has seen a hundred
+small business sites should be able to tell this one was made for this business.
+
+- Give the hero one clear idea. Keep the photograph bright and readable: place
+  the text on a calm part of the image, beside it, or on a solid panel, instead
+  of laying a dark wash over the whole picture.
+- Vary the layout from section to section. Do not stack row after row of three
+  equal cards. Mix a large image with text, an asymmetric grid, a full width
+  band, and a list set in large type.
+- Take the palette and the mood from the kind of place this is, so two
+  businesses in the same trade do not end up with the same brown and cream.
+- Add one memorable detail that belongs to this business, such as the hours set
+  like a shop door sign, or the signature products set large.
+- Use real hierarchy: one big type size, one small, and a lot of contrast
+  between them. Leave out anything that does not earn its place.
+- Keep the phone number and the directions one thumb away on a phone.
 
 **Animation.** {animation_rule}
 
@@ -478,8 +525,8 @@ Open it at 360px wide first, then at desktop width, read the browser console for
 errors, and confirm every image actually loads. Fix what you find, then show a
 screenshot at both widths.
 
-Then list in your reply: the files created, which placeholders the owner needs
-to fill in, and one sentence on what makes this site better than the situation
+Then list in your reply: the files created, what the owner could still add, and
+one sentence on what makes this site better than the situation
 described in "Why this business".
 """.format(
         name=lead["name"],
@@ -493,6 +540,7 @@ described in "Why this business".
         maps=lead["google_maps_link"],
         place_id=lead["place_id"],
         why=_why(lead, problems),
+        known_about=_known_about(lead),
         style=answers.get("style") or "not described",
         colours=" ".join(colours) or "not known yet",
         trade=answers.get("trade", "local business"),

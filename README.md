@@ -282,12 +282,14 @@ that work fine, and telling an owner their working site is down loses the deal.
 
 ## Adding your details for the outreach messages
 
-The messages sign off with your name and link to websites you have built. Put
-those in `config.yaml`, under `outreach`:
+The messages say who you are, sign off with your name, and link to websites you
+have built, when you have any. Put those in `config.yaml`, under `outreach`:
 
 ```yaml
 outreach:
   sender_name: "Your Name"
+  sender_about: "a computer science student from Serbia"
+  postal_address: ""
   portfolio_links:
     - url: "https://a-site-you-built.example/"
       what: "cafe, warm and quiet, one page"
@@ -295,7 +297,14 @@ outreach:
 
 Every link in that list goes into every message. The `what` line decides the
 order they appear in, so a grill owner reads the grill site before the bakery,
-and it doubles as the label next to each link.
+and it doubles as the label next to each link. With an empty list, the message
+leaves previous work out.
+
+The message also states a one time price. `scripts/pricing.py` works it out from
+`outreach.pricing`: a price for the trade, a little more for a business with many
+reviews, kept between `floor` and `ceiling`. `outreach.offer_includes` says what
+the price covers. Cold email to the United States needs a postal address, so
+fill in `postal_address` before sending any.
 
 Those two are yours rather than the project's, so there is a second place for
 them: create `config.local.yaml` next to `config.yaml` and put them there

@@ -12,6 +12,7 @@ TEXT_SUFFIXES = {".html", ".css", ".js", ".mjs", ".astro", ".jsx", ".tsx", ".vue
 SKIPPED_FOLDERS = {"node_modules", ".astro", ".git"}
 CSS_URL = re.compile(r"url\(\s*['\"]?([^'\")]+?)['\"]?\s*\)")
 FILLER_TEXT = re.compile(r"lorem\s+ipsum", re.IGNORECASE)
+BRACKETED_NOTE = re.compile(r"\[[A-Za-z][^\]]*\]")
 NOT_A_FILE = ("#", "data:", "mailto:", "tel:", "javascript:", "sms:", "whatsapp:", "viber:")
 
 
@@ -137,6 +138,12 @@ def _missing_files(page, soup, site_root):
     return problems
 
 
+def _visible_notes(soup):
+    for tag in soup.find_all(["script", "style"]):
+        tag.decompose()
+    return ['Visible note left on the page: "{}"'.format(note) for note in BRACKETED_NOTE.findall(soup.get_text(" "))]
+
+
 def check(folder):
     folder = Path(folder).expanduser()
     page = entry_page(folder)
@@ -147,6 +154,7 @@ def check(folder):
     site_root = page.parent
     problems = _head_problems(soup) + _structured_data_problems(soup) + _image_problems(soup)
     problems += _missing_files(page, soup, site_root)
+    problems += _visible_notes(soup)
 
     for path in _site_files(folder / "site"):
         if FILLER_TEXT.search(path.read_text(encoding="utf-8", errors="replace")):

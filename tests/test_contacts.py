@@ -116,14 +116,14 @@ class Lookup(unittest.TestCase):
 
     def test_without_a_key_nothing_is_spent(self):
         with tempfile.TemporaryDirectory() as root, mock.patch.object(contacts, "web_search") as search:
-            self.assertEqual(contacts.lookup(self.lead, SETTINGS, root, ""), {})
+            self.assertIsNone(contacts.lookup(self.lead, SETTINGS, root, ""))
         search.assert_not_called()
 
     def test_a_failed_search_is_not_remembered(self):
         error = contacts.requests.ConnectionError("down")
         with tempfile.TemporaryDirectory() as root:
             with mock.patch.object(contacts, "web_search", side_effect=error):
-                self.assertEqual(contacts.lookup(self.lead, self.settings, root, "key"), {})
+                self.assertIsNone(contacts.lookup(self.lead, self.settings, root, "key"))
             self.assertEqual(usage.read(root, contacts.USAGE_NAME)["calls"], 0)
 
 
@@ -139,7 +139,7 @@ class FirecrawlRequest(unittest.TestCase):
 
 
 class ContactCheck(unittest.TestCase):
-    opts = {"only_without_website": True}
+    opts = {"only_without_website": True, "require_online_contact": True}
 
     def row(self):
         return {"place_id": "a", "name": "Captain Bakery", "website": "", "email": ""}

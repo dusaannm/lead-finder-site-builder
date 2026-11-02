@@ -225,15 +225,15 @@ def lookup(lead, settings, root, api_key, place="", country=""):
     if _is_fresh(entry, options):
         return {column: value for column, value in entry.items() if column != "checked"}
     if not api_key or not options["enabled"]:
-        return {}
+        return None
     if not usage.remaining(root, options["monthly_search_limit"], USAGE_NAME):
-        return {}
+        return None
 
-    query = '"{}" {}'.format(lead.get("name"), place or lead.get("address") or "").strip()
+    query ='"{}" {}'.format(lead.get("name"), place or lead.get("address") or "").strip()
     try:
         results = web_search(query, api_key, options, country)
     except (requests.RequestException, ValueError):
-        return {}
+        return None
     usage.record_call(root, USAGE_NAME)
     found = read_results(lead, results, settings)
     cache[lead["place_id"]] = dict(found, checked=date.today().isoformat())

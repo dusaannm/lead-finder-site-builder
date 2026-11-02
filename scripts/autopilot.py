@@ -24,6 +24,7 @@ import lead_quality
 import lead_search
 import lead_store
 import outreach_log
+import pricing
 
 ROOT = lead_search.ROOT
 CODE = Path(__file__).resolve().parent.parent
@@ -268,13 +269,21 @@ def contact_check(path, opts, settings, city):
             return True
         searches_left[0] -= 1
         found = contacts.lookup(row, settings, ROOT, api_key, city.get("name", ""), city.get("code", ""))
+        if found is None:
+            return True
         new = {column: value for column, value in found.items() if value and not (row.get(column) or "").strip()}
         if new:
             row.update(new)
             lead_store.update_fields(path, row["place_id"], new)
-        return not (opts["only_without_website"] and (row.get("website") or "").strip())
+        if opts["only_without_website"] and (row.get("website") or "").strip():
+            return False
+        return not opts["require_online_contact"] or _reachable_online(row)
 
     return still_a_fit
+
+
+def _reachable_online(row):
+    return any((row.get(column) or "").strip() for column in ("email", "facebook", "instagram"))
 
 
 def choose_candidates(rows, opts, settings, root=None, still_a_fit=None):
@@ -332,6 +341,7 @@ def prepare(place_id, city=None, trade="", settings=None, collect=None, on_event
     if not (folder / "sources.json").exists():
         try:
             plan = _photo_plan(lead.get("category") or "", trade, lead["name"], settings)
+            _lead_with_description(plan, lead, settings)
             (collect or find_stock_photos.collect)(plan, folder, settings, on_event)
         except find_stock_photos.StockPhotoError as error:
             raise AutopilotError(str(error))
@@ -369,9 +379,34 @@ def prepare(place_id, city=None, trade="", settings=None, collect=None, on_event
         "stock_photos": _photo_count(folder),
         "project_folder": str(project_folder(lead["name"], settings)),
         "stack_needs_a_build": stack["needs_a_build"],
+        "description": lead.get("description", ""),
+        "review_notes": lead.get("review_notes", ""),
         "sender_name": settings["outreach"]["sender_name"],
+        "sender_about": settings["outreach"]["sender_about"],
+        "postal_address": settings["outreach"]["postal_address"],
         "portfolio_links": settings["outreach"]["portfolio_links"],
+        "price": "{}{}".format(
+            settings["outreach"]["pricing"]["currency"],
+            pricing.quote(lead, trade, settings["outreach"]["pricing"]),
+        ),
+        "offer_includes": settings["outreach"]["offer_includes"],
     }
+
+
+def description_query(text, settings):
+    options = settings["stock_photos"]
+    words = re.findall(r"[a-z]+", (text or "").lower())
+    kept = [word for word in words if word not in options["description_skip_words"]]
+    return " ".join(kept[: options["note_max_words"]])
+
+
+def _lead_with_description(plan, lead, settings):
+    query = description_query(lead.get("description"), settings)
+    if not query:
+        return
+    for purpose in ("hero", "gallery", "interior"):
+        if purpose in plan["queries"]:
+            plan["queries"][purpose].insert(0, query)
 
 
 def _photo_plan(category, trade, name, settings):

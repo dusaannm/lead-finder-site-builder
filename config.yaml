@@ -15,6 +15,8 @@ gosom:
   concurrency: 2
   language: en
   extract_emails: true
+  reviews_kept: 5
+  review_characters: 240
   timeout_minutes: 25
   inactivity_minutes: 3
   poll_seconds: 2
@@ -146,7 +148,43 @@ brief:
 outreach:
   follow_up_days: 4
   sender_name: ""
+  sender_about: ""
+  postal_address: ""
   portfolio_links: []
+  offer_includes: "your own photos and menu, the changes you want, setup on your own domain, and no monthly fee"
+  pricing:
+    currency: "$"
+    floor: 300
+    ceiling: 700
+    step: 50
+    default: 400
+    by_trade:
+      bakery: 350
+      cafe: 350
+      coffee_shop: 350
+      florist: 350
+      hairdresser: 350
+      hair_salon: 350
+      barber: 350
+      barber_shop: 350
+      beauty: 400
+      beauty_salon: 400
+      pizza: 400
+      restaurant: 450
+      car_repair: 450
+      fitness_centre: 500
+      gym: 500
+      veterinary: 550
+      doctor: 600
+      accountant: 600
+      dentist: 650
+      estate_agent: 650
+      real_estate_agency: 650
+      lawyer: 700
+      hotel: 700
+    review_bonus:
+      - {reviews: 200, amount: 50}
+      - {reviews: 1000, amount: 50}
   channels:
     - email
     - viber
@@ -159,6 +197,7 @@ stock_photos:
   per_purpose: 4
   max_total: 20
   note_max_words: 4
+  description_skip_words: [a, an, and, the, of, for, in, with, featuring, serving, offering, known, offers]
   min_source_width: 1920
   purposes:
     - hero
@@ -345,6 +384,7 @@ autopilot:
   search_limit: 150
   only_without_website: true
   require_phone: true
+  require_online_contact: true
   min_rating: 4.0
   min_reviews: 20
   cities_from: us

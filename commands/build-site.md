@@ -48,9 +48,10 @@ Hard rules, repeated because they are the ones most often broken:
 - No lorem ipsum. Write real copy for this business.
 - Never invent reviews, staff names or prices. The address, phone and opening
   hours are real wherever the brief's table gives them, so use them exactly;
-  where it says "not listed", treat that one as unknown too. Put a clear
-  placeholder in the site language for everything unknown, and list every
-  placeholder in an HTML comment at the bottom of `index.html`.
+  where it says "not listed", treat that one as unknown too. The page has to
+  read as finished: no bracketed notes, no "Owner:" text and no empty slots.
+  Write around what is unknown or leave it out, and list what the owner could
+  add in an HTML comment at the bottom of `index.html`.
 - `<title>`, `<meta name="description">` and `<meta name="viewport">` are
   mandatory.
 - When the brief asks for GSAP, get local copies of `gsap.min.js` and
@@ -74,7 +75,8 @@ folder that holds `brief.md`:
 ```
 
 It checks the title, the description, the viewport, a single `<h1>`, the
-JSON-LD, every image path and alt text, and that no lorem ipsum is left. Fix
+JSON-LD, every image path and alt text, and that no lorem ipsum or bracketed
+note is left. Fix
 what it lists, then open the site, because no script can tell whether it looks
 right.
 
@@ -93,8 +95,8 @@ Leave the server running so they can click around, and tell them the address.
 
 ## 4. Report
 
-Say which files you wrote, list the placeholders the owner has to fill in, and
-give one sentence on what this site does better than whatever the business has
+Say which files you wrote, list what the owner could still add, and give one
+sentence on what this site does better than whatever the business has
 now.
 
 Do not write the outreach message here. That is `/draft-outreach`.

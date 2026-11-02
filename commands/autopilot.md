@@ -29,13 +29,15 @@ messages and sends them.
 It finds the lead, downloads its stock photographs unless they are already
 there, and writes the answers from the settings into a file. It prints JSON
 naming that `answers_file`, the `stock_folder`, the `project_folder`, the city,
-the site language, the sender name and the portfolio links.
+the site language, what is known about the business, the sender, the price, what
+the price includes, and the portfolio links.
 
 ## 2. Check the photographs
 
 Read every `description` in `sources.json` in the stock folder against the
-trade, then open every hero and interior photograph and look at it. Remove each
-one that plainly shows another kind of business, or another business's name or
+trade and against what is known about this business, then open every hero and
+interior photograph and look at it. Remove each one that plainly shows another
+kind of business or food this place does not sell, or another business's name or
 logo on a window, a cup or a board:
 
 ```
@@ -52,7 +54,11 @@ Read the answers file and add what only judgement can give. Leave every value
 already in it exactly as it is.
 
 - `sections`, `seo_keywords`, `trade` and, when the file has none, `style`,
-  exactly as step 4 of `commands/build-brief.md` describes them.
+  exactly as step 4 of `commands/build-brief.md` describes them, but shaped by
+  the `description` and `review_notes` step 1 printed: `trade` says what this
+  place really is, such as "Chinese bakery", and `style` is a look that fits it
+  and differs from the usual look of the trade. Leave out any section that would
+  only exist to be filled in later.
 - `language`, when the file has none: the language most people in that city
   speak.
 - `city`, when the file has none, read from the lead's address or its Maps link.
@@ -98,9 +104,11 @@ page afterwards.
 ## 5. Draft the messages
 
 Write the three versions exactly as step 3 of `commands/draft-outreach.md`
-describes, in the site language, signed with the sender name and carrying every
-portfolio link that step 1 printed. Where the sender name is empty, sign with
-`[your name]` rather than inventing one.
+describes, in the site language, using the sender, the postal address, the price
+and what it includes, all as step 1 printed them, plus every portfolio link when
+there are any. Where the sender name is empty, sign with `[your name]` rather
+than inventing one. Write the demo link as exactly `[link to the demo site]`,
+which is replaced when the site is published.
 
 Save them to `outreach.md` in the project folder under exactly these three
 headings, so the browser page can show each one with a copy button:
@@ -115,5 +123,5 @@ The email starts with its `Subject:` line.
 
 ## 6. Report
 
-One short paragraph: the folder, whether the check passed, the placeholders the
-owner has to fill in, and that the messages are in `outreach.md`.
+One short paragraph: the folder, whether the check passed, what the owner could
+still add, and that the messages are in `outreach.md`.

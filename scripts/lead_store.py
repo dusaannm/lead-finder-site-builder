@@ -25,6 +25,8 @@ COLUMNS = [
     "instagram",
     "facebook",
     "chain",
+    "description",
+    "review_notes",
 ]
 
 CONTACT_FIELDS = ["email", "instagram", "facebook"]
@@ -156,6 +158,8 @@ def merge(new_leads, existing_rows):
                 "place_id": place_id,
                 "status": previous_status,
                 "chain": lead.get("chain", ""),
+                "description": lead.get("description") or row.get("description", ""),
+                "review_notes": lead.get("review_notes") or row.get("review_notes", ""),
             }
         )
         for column in CONTACT_FIELDS:

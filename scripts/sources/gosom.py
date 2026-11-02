@@ -58,7 +58,18 @@ def _map_pin(row):
     return "https://www.google.com/maps/search/?api=1&query={},{}".format(latitude, longitude)
 
 
-def lead_from_row(row, quality):
+def _description(row):
+    parts = [(row.get(key) or "").strip() for key in ("description", "status")]
+    return ". ".join(part.rstrip(".") for part in dict.fromkeys(parts) if part)
+
+
+def _review_notes(row, options):
+    texts = [(review.get("Description") or "").strip() for review in row.get("user_reviews") or []]
+    kept = [text[: options["review_characters"]] for text in texts if text][: options["reviews_kept"]]
+    return " | ".join(" ".join(text.split()) for text in kept)
+
+
+def lead_from_row(row, quality, options):
     name = (row.get("title") or "").strip()
     place_id = (row.get("place_id") or "").strip()
     if not name or not place_id:
@@ -79,6 +90,8 @@ def lead_from_row(row, quality):
         "google_maps_link": row.get("link") or "",
         "map_pin": _map_pin(row),
         "category": _category(row),
+        "description": _description(row),
+        "review_notes": _review_notes(row, options),
     }
     lead.update(lead_quality.split_website(row.get("web_site"), quality))
     return lead
@@ -169,7 +182,7 @@ def search(query, limit, settings, on_event=None, place=None, with_emails=True):
         if lead_quality.is_closed("{} {}".format(row.get("status"), row.get("description")), quality):
             closed += 1
             continue
-        lead = lead_from_row(row, quality)
+        lead = lead_from_row(row, quality, options)
         if lead:
             leads.setdefault(lead["place_id"], lead)
 
