@@ -6,6 +6,115 @@ search:
 protection:
   monthly_call_limit: 900
 
+gosom:
+  enabled: false
+  launcher: ["env", "DISABLE_TELEMETRY=1"]
+  executable: ""
+  work_dir: ""
+  depth: 8
+  concurrency: 2
+  language: en
+  extract_emails: true
+  timeout_minutes: 25
+  inactivity_minutes: 3
+  poll_seconds: 2
+  exit_grace_seconds: 5
+  stop_command: []
+
+contacts:
+  enabled: true
+  search_url: "https://api.firecrawl.dev/v2/search"
+  results_per_search: 10
+  max_searches_per_run: 15
+  monthly_search_limit: 450
+  search_pause_seconds: 7
+  search_timeout_seconds: 70
+  cache_days: 30
+  timeout_seconds: 10
+  workers: 6
+  max_page_chars: 500000
+  min_name_match: 6
+  contact_paths:
+    - /contact
+    - /contact-us
+    - /about
+    - /about-us
+  generic_name_words:
+    - the
+    - inc
+    - llc
+    - ltd
+    - co
+    - corp
+    - company
+  directory_hosts:
+    - yellowpages.com
+    - mapquest.com
+    - bbb.org
+    - foursquare.com
+    - restaurantji.com
+    - opentable.com
+    - wanderlog.com
+    - timeout.com
+    - theinfatuation.com
+    - google.com
+    - apple.com
+
+lead_quality:
+  chain_min_locations: 3
+  chains:
+    - Starbucks
+    - Dunkin'
+    - McDonald's
+    - Subway
+    - Domino's
+    - Pizza Hut
+    - Papa Johns
+    - Great Clips
+    - Supercuts
+    - Sport Clips
+    - Brioche Dorée
+    - Paris Baguette
+    - Tous Les Jours
+  closed_words:
+    - permanently closed
+    - temporarily closed
+  not_a_website:
+    - facebook.com
+    - fb.com
+    - instagram.com
+    - linktr.ee
+    - yelp.com
+    - tripadvisor.com
+    - doordash.com
+    - ubereats.com
+    - grubhub.com
+    - toasttab.com
+    - sites.google.com
+  junk_email_domains:
+    - domain.com
+    - example.com
+    - email.com
+    - sentry.io
+    - sentry.wixpress.com
+    - wixpress.com
+    - mysite.co.il
+    - godaddy.com
+    - squarespace.com
+  junk_email_endings:
+    - .png
+    - .jpg
+    - .jpeg
+    - .gif
+    - .svg
+    - .webp
+  escaped_email_roles:
+    - info
+    - hello
+    - contact
+    - sales
+    - office
+
 scoring:
   no_website: 50
   poor_website: 30
@@ -45,6 +154,8 @@ outreach:
     - instagram
 
 stock_photos:
+  search_results: 30
+  search_cache_hours: 24
   per_purpose: 4
   max_total: 20
   note_max_words: 4
@@ -234,6 +345,8 @@ autopilot:
   search_limit: 150
   only_without_website: true
   require_phone: true
+  min_rating: 4.0
+  min_reviews: 20
   cities_from: us
   trades:
     - pizzeria
@@ -256,6 +369,7 @@ autopilot:
   builder:
     command: ""
     model: ""
+    effort: ""
     timeout_minutes: 45
     parallel: 3
     check_timeout_seconds: 120

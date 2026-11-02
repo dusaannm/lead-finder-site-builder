@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import sys
+import time
 from pathlib import Path
 
 import requests
@@ -14,6 +15,7 @@ import lead_search
 import lead_store
 
 PEXELS_SEARCH = "https://api.pexels.com/v1/search"
+PIXABAY_SEARCH = "https://pixabay.com/api/"
 ROOT = lead_search.ROOT
 
 
@@ -21,20 +23,26 @@ class StockPhotoError(Exception):
     pass
 
 
-def _api_key():
+def _provider():
     load_dotenv(ROOT / ".env")
-    key = (os.getenv("PEXELS_API_KEY") or "").strip()
-    if not key:
-        raise StockPhotoError("PEXELS_API_KEY is empty in .env. See SETUP.md, section 1.")
-    return key
+    for name, variable in (("Pexels", "PEXELS_API_KEY"), ("Pixabay", "PIXABAY_API_KEY")):
+        key = (os.getenv(variable) or "").strip()
+        if key:
+            return name, key
+    raise StockPhotoError("PEXELS_API_KEY and PIXABAY_API_KEY are both empty in .env.")
 
 
-def _search(query, key, options):
+def _search_pexels(query, key, options):
     try:
         response = requests.get(
             PEXELS_SEARCH,
             headers={"Authorization": key},
-            params={"query": query, "per_page": 30, "orientation": "landscape", "size": "large"},
+            params={
+                "query": query,
+                "per_page": options["search_results"],
+                "orientation": "landscape",
+                "size": "large",
+            },
             timeout=30,
         )
         if response.status_code == 401:
@@ -46,6 +54,75 @@ def _search(query, key, options):
         raise StockPhotoError("Pexels did not respond: {}".format(error))
 
     return response.json().get("photos", [])
+
+
+def _photo_from_pixabay(hit):
+    user = hit.get("user") or "Pixabay"
+    return {
+        "id": hit["id"],
+        "width": hit.get("imageWidth", 0),
+        "height": hit.get("imageHeight", 1),
+        "alt": hit.get("tags") or "",
+        "url": hit.get("pageURL") or "",
+        "photographer": user,
+        "photographer_url": "https://pixabay.com/users/{}-{}/".format(user, hit.get("user_id", "")),
+        "src": {"large": hit["largeImageURL"], "original": hit["largeImageURL"]},
+    }
+
+
+def _cache_file(query):
+    return lead_store.data_dir(ROOT) / "stock_searches" / "{}.json".format(lead_store.to_slug(query))
+
+
+def _cached_hits(query, options):
+    path = _cache_file(query)
+    if not path.exists():
+        return None
+    record = json.loads(path.read_text(encoding="utf-8"))
+    if time.time() - record["saved"] > options["search_cache_hours"] * 3600:
+        return None
+    return record["hits"]
+
+
+def _remember_hits(query, hits):
+    path = _cache_file(query)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"saved": time.time(), "hits": hits}, ensure_ascii=False), encoding="utf-8")
+
+
+def _search_pixabay(query, key, options):
+    hits = _cached_hits(query, options)
+    if hits is None:
+        try:
+            response = requests.get(
+                PIXABAY_SEARCH,
+                params={
+                    "key": key,
+                    "q": query,
+                    "image_type": "photo",
+                    "orientation": "horizontal",
+                    "safesearch": "true",
+                    "per_page": options["search_results"],
+                },
+                timeout=30,
+            )
+            if response.status_code in (400, 401, 403):
+                raise StockPhotoError("Pixabay refused the search. Check PIXABAY_API_KEY in .env.")
+            if response.status_code == 429:
+                raise StockPhotoError("Pixabay rate limit reached. Wait a minute and retry.")
+            response.raise_for_status()
+        except requests.RequestException as error:
+            raise StockPhotoError("Pixabay did not respond: {}".format(type(error).__name__))
+        hits = response.json().get("hits", [])
+        _remember_hits(query, hits)
+    return [_photo_from_pixabay(hit) for hit in hits if hit.get("largeImageURL")]
+
+
+SEARCHES = {"Pexels": _search_pexels, "Pixabay": _search_pixabay}
+LICENCES = {
+    "Pexels": "Pexels licence, free for commercial use, attribution appreciated",
+    "Pixabay": "Pixabay Content License, free for commercial use, attribution not required",
+}
 
 
 def _acceptable(photo, options):
@@ -69,7 +146,7 @@ def _room_left(taken_for_purpose, collected, options):
     return taken_for_purpose < options["per_purpose"] and len(collected) < options["max_total"]
 
 
-def _take_next(candidates, query, purpose, out_dir, seen_ids, options):
+def _take_next(candidates, query, purpose, out_dir, seen_ids, options, provider):
     for photo in candidates:
         if photo["id"] in seen_ids or not _acceptable(photo, options):
             continue
@@ -89,17 +166,18 @@ def _take_next(candidates, query, purpose, out_dir, seen_ids, options):
             "width": width,
             "height": height,
             "description": photo.get("alt") or "",
-            "pexels_url": photo["url"],
+            "source": provider,
+            "source_url": photo["url"],
             "photographer": photo["photographer"],
             "photographer_url": photo["photographer_url"],
-            "licence": "Pexels licence, free for commercial use, attribution appreciated",
+            "licence": LICENCES[provider],
         }
     return None
 
 
 def collect(plan, out_dir, settings, on_event=None):
     options = settings["stock_photos"]
-    key = _api_key()
+    provider, key = _provider()
     out_dir = Path(out_dir)
 
     collected = []
@@ -120,9 +198,9 @@ def collect(plan, out_dir, settings, on_event=None):
                 if query not in candidates:
                     if on_event:
                         on_event('searching "{}" for {}'.format(query, purpose))
-                    candidates[query] = iter(_search(query, key, options))
+                    candidates[query] = iter(SEARCHES[provider](query, key, options))
 
-                photo = _take_next(candidates[query], query, purpose, out_dir, seen_ids, options)
+                photo = _take_next(candidates[query], query, purpose, out_dir, seen_ids, options, provider)
                 if photo is None:
                     exhausted.add(query)
                     continue
@@ -131,7 +209,7 @@ def collect(plan, out_dir, settings, on_event=None):
 
     sources = {
         "business": plan.get("business", ""),
-        "source": "Pexels",
+        "source": provider,
         "photos": collected,
     }
     (out_dir / "sources.json").write_text(
@@ -206,7 +284,7 @@ def main():
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
     parser = argparse.ArgumentParser(
-        description="Downloads free Pexels photographs for a business, grouped by where they go on the site."
+        description="Downloads free stock photographs for a business, grouped by where they go on the site."
     )
     parser.add_argument("--plan", help="JSON file holding the business name and one query list per purpose")
     parser.add_argument("--category", help="Trade of the business, which picks a ready query plan from config.yaml")

@@ -20,6 +20,10 @@ def main():
     result = site_audit.audit(arguments.url, settings)
 
     print("\n{}".format(result["url"]))
+    if result.get("unverified"):
+        print("Not checked: the site refused this script, which does not mean it is down.\n")
+        return
+
     print("Score: {} of 100".format(result["score"]))
 
     if result["status_code"]:

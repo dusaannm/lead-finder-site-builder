@@ -66,7 +66,7 @@ def main():
     parser = argparse.ArgumentParser(description="Finds local businesses and ranks them as website candidates.")
     parser.add_argument("query", help='For example: "pizzeria Novi Sad"')
     parser.add_argument("--limit", type=_limit, default=None, help="Maximum number of results, at least 1")
-    parser.add_argument("--source", choices=["auto", "google", "osm"], default="auto")
+    parser.add_argument("--source", choices=["auto", "gosom", "google", "osm"], default="auto")
     parser.add_argument("--no-audit", action="store_true", help="Skip checking the existing websites")
     arguments = parser.parse_args()
 
@@ -74,7 +74,9 @@ def main():
 
     try:
         summary = lead_search.usage_summary()
-        if arguments.source != "osm" and lead_search.google_key():
+        if arguments.source == "gosom" or (arguments.source == "auto" and lead_search.gosom_enabled()):
+            print("Source: Google Maps through gosom\n")
+        elif arguments.source != "osm" and lead_search.google_key():
             print("Source: Google Places API (New)")
             print("Calls used this month: {} of {}\n".format(summary["used"], summary["limit"]))
         else:
@@ -108,6 +110,8 @@ def main():
         print("Checked {} existing websites, {} of them scored poorly enough to be worth pitching.".format(
             result["audited"], result["poor_websites"]
         ))
+    if result.get("emails_from_sites"):
+        print("Found an email on {} of the websites worth pitching.".format(result["emails_from_sites"]))
     if result.get("closed_dropped"):
         print("Dropped as closed: {}".format(result["closed_dropped"]))
     if result.get("previous"):

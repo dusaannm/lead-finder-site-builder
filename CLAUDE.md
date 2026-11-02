@@ -138,10 +138,14 @@ in English. Do not add co-author trailers.
 - The tool never sends a message anywhere and holds no credentials for any
   messaging account. It only drafts. The autopilot included: a message is
   logged as sent only when the person presses the button that says so.
-- Site images come from Pexels, chosen by trade
-  from `stock_photos.plans` in `config.yaml`, or from the client.
+- Site images come from Pexels or Pixabay, whichever has a key in `.env`, chosen
+  by trade from `stock_photos.plans` in `config.yaml`, or from the client.
 - The monthly Google call limit in `config.yaml` stays below the free tier.
-- Nothing scrapes Google Maps or CompanyWall. The tool generates links a human
-  clicks. During `/build-brief` the assistant may open the listing of the one
-  lead being built and read it the way a person would, never the listings of a
-  whole search.
+- The only thing that reads Google Maps in bulk is `scripts/sources/gosom.py`,
+  which the owner of this fork turned on knowingly in `config.local.yaml` and
+  which stays off in `config.yaml`. It runs slowly, on one connection, with no
+  proxies and no way around a block. When Google refuses, the search falls back
+  to OpenStreetMap. Nothing scrapes CompanyWall; the tool generates links a
+  human clicks. During `/build-brief` the assistant may open the listing of the
+  one lead being built and read it the way a person would, never the listings
+  of a whole search.

@@ -226,6 +226,60 @@ file is ignored by Git and will never be uploaded anywhere.
 including the quota that protects you from being charged. Read the Google
 section before running anything against Google.
 
+## Searching Google Maps through gosom
+
+[gosom](https://github.com/gosom/google-maps-scraper) reads Google Maps without
+an API key, so it gives ratings, review counts and a website field where Google
+billing is not available. Automated reading of Google Maps may break Google's
+terms, and Google can refuse a connection, so it is off by default and the
+decision is yours.
+
+On Windows its own build fails on the Chrome it starts, so run the Linux build
+inside WSL. Put the binary in the distribution and turn it on in
+`config.local.yaml`:
+
+```yaml
+gosom:
+  enabled: true
+  launcher: ["wsl", "-d", "Ubuntu-24.04", "--", "env", "DISABLE_TELEMETRY=1"]
+  executable: "/home/you/gosom"
+  work_dir: "D:/lead-finder-data/gosom"
+  stop_command: ["wsl", "-d", "Ubuntu-24.04", "--", "pkill", "-9", "-f", "/home/you/gosom|ms-playwright"]
+```
+
+gosom can stay running after it finishes, so `stop_command` ends it once its
+log says the work is done. Searches then use it first, and OpenStreetMap takes over if it finds nothing.
+`--source gosom` asks for it alone. A website field that is really a Facebook
+or Instagram page counts as no website and is kept as a contact. Businesses
+marked closed are dropped, chains are marked in the `chain` column, and the
+autopilot skips chains and anything under `autopilot.min_rating` or
+`autopilot.min_reviews`. A rerun replaces an older row with the same phone
+number, so a business found by both sources appears once.
+
+## Finding a way to reach each business
+
+Every search looks for contacts in two ways.
+
+For a business with a poor website, it reads the home page and the contact and
+about pages from `contacts.contact_paths`, and keeps emails and Instagram and
+Facebook links. This needs no key.
+
+For a business with no website, the autopilot runs one web search through
+[Firecrawl](https://www.firecrawl.dev/), once `FIRECRAWL_API_KEY` is in `.env`.
+It happens only for a business the autopilot is about to build, so a plain
+search spends nothing. A result counts only when it names the business. A domain
+carrying the business's name turns it into a business with a website, which is
+the check that catches a wrong "no website", and the autopilot moves on to the
+next one. Answers are kept in `data/contact_cache.json` for
+`contacts.cache_days`. Calls stop at `contacts.max_searches_per_run` per run and
+`contacts.monthly_search_limit` per month, counted in `data/search_usage.json`
+and set below the free plan. Facebook and Instagram are never opened by the
+tool: only the search result is read.
+
+A website that refuses a script, with a 403 or a dropped connection, is not
+called dead. It stays unaudited, because Cloudflare answers that way for sites
+that work fine, and telling an owner their working site is down loses the deal.
+
 ## Adding your details for the outreach messages
 
 The messages sign off with your name and link to websites you have built. Put
@@ -463,8 +517,8 @@ and Facebook come from OpenStreetMap, which has them for some businesses. Where
 one is missing, a link searches the web for it. Every link only opens the app;
 nothing is sent until you press send there yourself.
 
-While a run is going on a Mac, the computer is kept awake, so a locked screen
-does not stall it. Closing the lid still puts it to sleep.
+While a run is going on a Mac or on Windows, the computer is kept awake, so a
+locked screen does not stall it. Closing a laptop lid can still put it to sleep.
 
 **What a run costs.** Each site is one full Claude Code session, which comes
 out of your Claude plan's usage the same way typing the commands yourself
@@ -620,8 +674,9 @@ them at all: to see what a place looks like, it gives you a link to open, the
 same as everywhere else. Every image that goes on a site comes from Pexels or
 from the client.
 
-**Nothing is scraped.** Not Google Maps, not the company register. The tool
-builds links for a human to click.
+**Nothing is scraped by default.** The company register never is, and the tool
+builds links for a human to click. The one exception is gosom, below, which
+reads Google Maps and stays off until you turn it on yourself.
 
 **Google's terms allow their data to be kept for 30 days at most**, with one
 exception: the `place_id`, the identifier of a business, may be kept forever.

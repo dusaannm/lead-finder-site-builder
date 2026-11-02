@@ -3,6 +3,7 @@ import time
 
 import requests
 
+import lead_quality
 import lead_store
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
@@ -232,7 +233,7 @@ def search(query, limit, settings, on_event=None, place=None):
         leads.append(lead)
 
     return {
-        "leads": leads[:limit],
+        "leads": sorted(leads, key=lead_quality.promise)[:limit],
         "total_found": len(leads),
         "term": term,
         "place": place,

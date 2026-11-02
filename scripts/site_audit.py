@@ -30,6 +30,9 @@ TEMPLATE_PLATFORMS = {
     "squarespace": "Squarespace",
 }
 
+REFUSING_STATUSES = {401, 403, 406, 429, 503}
+DOMAIN_MISSING_WORDS = ("NameResolutionError", "getaddrinfo failed", "Name or service not known")
+
 VERSION_PATTERN = re.compile(r"(\d+)(?:\.(\d+))?")
 
 YEAR_PATTERN = re.compile(
@@ -55,7 +58,12 @@ def _attempts(url):
     return [secure, secure.replace("https://", "http://", 1)]
 
 
+def _domain_missing(error):
+    return any(words in str(error) for words in DOMAIN_MISSING_WORDS)
+
+
 def _fetch(url, options):
+    certainly_dead = True
     for candidate in _attempts(url):
         try:
             response = requests.get(
@@ -65,10 +73,13 @@ def _fetch(url, options):
                 allow_redirects=True,
             )
             if response.status_code < 400:
-                return response
-        except requests.RequestException:
-            continue
-    return None
+                return response, False
+            if response.status_code in REFUSING_STATUSES:
+                certainly_dead = False
+        except requests.RequestException as error:
+            if not _domain_missing(error):
+                certainly_dead = False
+    return None, certainly_dead
 
 
 def _message(settings, key, **values):
@@ -142,7 +153,11 @@ def audit(url, settings):
     if not target:
         return result
 
-    response = _fetch(url, options)
+    response, certainly_dead = _fetch(url, options)
+    if response is None and not certainly_dead:
+        result["score"] = None
+        result["unverified"] = True
+        return result
     if response is None:
         result["problems"].append(_message(settings, "unreachable"))
         return result

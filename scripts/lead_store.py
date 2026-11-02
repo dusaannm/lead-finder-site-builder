@@ -24,11 +24,14 @@ COLUMNS = [
     "email",
     "instagram",
     "facebook",
+    "chain",
 ]
 
 CONTACT_FIELDS = ["email", "instagram", "facebook"]
 
 STATUSES = ["", "contacted", "declined", "accepted"]
+
+PHONE_DIGITS_COMPARED = 9
 
 CYRILLIC_TO_LATIN = {
     "а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "ђ": "dj", "е": "e",
@@ -106,11 +109,31 @@ def _row_ranking_key(row):
     return -_as_number(row.get("score"), 0), _as_number(row.get("website_score"), -1)
 
 
+def _phone_key(value):
+    digits = re.sub(r"\D", "", value or "")
+    return digits[-PHONE_DIGITS_COMPARED:] if len(digits) >= PHONE_DIGITS_COMPARED else ""
+
+
+def _retire_duplicates(merged, new_leads):
+    owners = {_phone_key(lead.get("phone")): lead["place_id"] for lead in new_leads}
+    owners.pop("", None)
+    for place_id, row in list(merged.items()):
+        owner = owners.get(_phone_key(row.get("phone")))
+        if not owner or owner == place_id:
+            continue
+        del merged[place_id]
+        if row.get("status") and owner not in merged:
+            merged[owner] = {column: "" for column in COLUMNS}
+            merged[owner]["status"] = row["status"]
+
+
 def merge(new_leads, existing_rows):
     merged = {}
 
     for place_id, row in existing_rows.items():
         merged[place_id] = {column: row.get(column, "") for column in COLUMNS}
+
+    _retire_duplicates(merged, new_leads)
 
     for lead in new_leads:
         place_id = lead["place_id"]
@@ -132,6 +155,7 @@ def merge(new_leads, existing_rows):
                 "contact_search": lead.get("contact_search", ""),
                 "place_id": place_id,
                 "status": previous_status,
+                "chain": lead.get("chain", ""),
             }
         )
         for column in CONTACT_FIELDS:

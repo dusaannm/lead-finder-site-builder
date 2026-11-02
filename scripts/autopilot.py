@@ -1,4 +1,5 @@
 import argparse
+import ctypes
 import json
 import os
 import random
@@ -17,7 +18,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import build_brief
 import check_site
+import contacts
 import find_stock_photos
+import lead_quality
 import lead_search
 import lead_store
 import outreach_log
@@ -32,6 +35,8 @@ DESKTOP_COPIES = "Library/Application Support/Claude/claude-code"
 POLL_SECONDS = 1.0
 STOP_POLL_SECONDS = 0.3
 SKIPPED_EVENT = '{"type":"user"'
+ES_CONTINUOUS = 0x80000000
+ES_SYSTEM_REQUIRED = 0x00000001
 
 REGIONS = {
     "us": "United States",
@@ -254,7 +259,25 @@ def _known_facts(row):
     return sum(1 for column in ("address", "opening_hours") if (row.get(column) or "").strip())
 
 
-def choose_candidates(rows, opts, settings, root=None):
+def contact_check(path, opts, settings, city):
+    api_key = lead_search.search_key()
+    searches_left = [settings["contacts"]["max_searches_per_run"]]
+
+    def still_a_fit(row):
+        if searches_left[0] < 1:
+            return True
+        searches_left[0] -= 1
+        found = contacts.lookup(row, settings, ROOT, api_key, city.get("name", ""), city.get("code", ""))
+        new = {column: value for column, value in found.items() if value and not (row.get(column) or "").strip()}
+        if new:
+            row.update(new)
+            lead_store.update_fields(path, row["place_id"], new)
+        return not (opts["only_without_website"] and (row.get("website") or "").strip())
+
+    return still_a_fit
+
+
+def choose_candidates(rows, opts, settings, root=None, still_a_fit=None):
     contacted = {row["place_id"] for row in outreach_log.load(root or ROOT)}
     ordered = sorted(
         rows, key=lambda row: (-_number(row.get("score")), -_known_facts(row), (row.get("name") or "").lower())
@@ -269,7 +292,11 @@ def choose_candidates(rows, opts, settings, root=None):
             continue
         if opts["require_phone"] and not (row.get("phone") or "").strip():
             continue
+        if not lead_quality.meets_quality(row, opts):
+            continue
         if (project_folder(row.get("name") or "", settings) / "brief.md").exists():
+            continue
+        if still_a_fit is not None and not still_a_fit(row):
             continue
         chosen.append(row)
         folders.add(folder)
@@ -424,10 +451,13 @@ def render_prompt(place_id, settings, root=None):
 
 
 def _edit_rule(folder):
-    return "Edit(//{}/**)".format(Path(folder).resolve().as_posix().lstrip("/"))
+    resolved = Path(folder).resolve()
+    drive = resolved.drive.rstrip(":").lower()
+    path = resolved.as_posix()[len(resolved.drive):]
+    return "Edit(//{}/**)".format("{}{}".format(drive, path).lstrip("/"))
 
 
-def builder_command(executable, prompt, opts, settings, needs_a_build=False, root=None):
+def builder_command(executable, opts, settings, needs_a_build=False, root=None):
     output = build_brief.output_dir(settings)
     allowed = [
         "Read",
@@ -439,11 +469,14 @@ def builder_command(executable, prompt, opts, settings, needs_a_build=False, roo
     ]
     if needs_a_build:
         allowed += ["Bash(npm *)", "Bash(npx *)"]
-    command = [executable, "-p", prompt, "--permission-mode", "dontAsk", "--allowedTools"] + allowed
+    command = [executable, "-p", "--permission-mode", "dontAsk", "--allowedTools"] + allowed
     command += ["--add-dir", str(Path(output).resolve()), "--output-format", "stream-json", "--verbose"]
     model = (opts["builder"]["model"] or "").strip()
     if model:
         command += ["--model", model]
+    effort = (opts["builder"]["effort"] or "").strip()
+    if effort:
+        command += ["--effort", effort]
     return command
 
 
@@ -555,17 +588,25 @@ def _end(process):
         process.wait()
 
 
-def run_builder(command, log_path, timeout_seconds, stop_event=None, cwd=None):
+def prompt_path(log_path):
+    return Path(log_path).with_suffix(".prompt.txt")
+
+
+def run_builder(command, log_path, timeout_seconds, stop_event=None, cwd=None, prompt=""):
     log_path = Path(log_path)
     log_path.parent.mkdir(parents=True, exist_ok=True)
     reply_path = stream_path(log_path)
+    prompt_file = prompt_path(log_path)
+    prompt_file.write_text(prompt, encoding="utf-8")
     started = time.monotonic()
     ending = ""
 
-    with open(reply_path, "w", encoding="utf-8") as reply_file, open(log_path, "w", encoding="utf-8") as log:
+    with open(reply_path, "w", encoding="utf-8") as reply_file, open(log_path, "w", encoding="utf-8") as log, open(
+        prompt_file, "rb"
+    ) as prompt_input:
         try:
             process = subprocess.Popen(
-                command, cwd=str(cwd or CODE), stdout=reply_file, stderr=log, stdin=subprocess.DEVNULL
+                command, cwd=str(cwd or CODE), stdout=reply_file, stderr=log, stdin=prompt_input
             )
         except OSError as error:
             return {
@@ -758,8 +799,8 @@ def _build_one(candidate, run, settings, opts, stop_event, build):
 
     prompt = render_prompt(candidate["place_id"], settings)
     needs_a_build = STACKS[opts["site"]["stack"]]["needs_a_build"]
-    command = builder_command(run.state["builder"], prompt, opts, settings, needs_a_build)
-    outcome = build(command, log, opts["builder"]["timeout_minutes"] * 60, stop_event)
+    command = builder_command(run.state["builder"], opts, settings, needs_a_build)
+    outcome = build(command, log, opts["builder"]["timeout_minutes"] * 60, stop_event, prompt=prompt)
 
     found = activity(log)
     facts = {
@@ -842,7 +883,17 @@ def _search_or_stop(call, stop_event):
     return outcome
 
 
+class WindowsAwake:
+    def __init__(self):
+        ctypes.windll.kernel32.SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED)
+
+    def terminate(self):
+        ctypes.windll.kernel32.SetThreadExecutionState(ES_CONTINUOUS)
+
+
 def _keep_awake(opts):
+    if opts.get("keep_awake") and os.name == "nt":
+        return WindowsAwake()
     tool = shutil.which("caffeinate") if opts.get("keep_awake") else None
     if not tool:
         return None
@@ -902,8 +953,9 @@ def _execute(run, settings, opts, stop_event, search, collect, build, building, 
 
     result = found["result"]
     rows = result.get("rows") or []
-    chosen = choose_candidates(rows, opts, settings)
-    builder = (find_builder(opts) or "") if building else ""
+    still_a_fit = contact_check(result["path"], opts, settings, city) if result.get("path") else None
+    chosen = choose_candidates(rows, opts, settings, still_a_fit=still_a_fit)
+    builder =(find_builder(opts) or "") if building else ""
     run.update(
         leads_file=result["path"].name if result.get("path") else "",
         found=len(rows),
@@ -1169,7 +1221,8 @@ def _resume_command(session_id, opts):
         return ""
     on_path = shutil.which("claude") or (Path.home() / ".local" / "bin" / "claude").is_file()
     program = "claude" if on_path else '"{}"'.format(find_builder(opts) or "claude")
-    return 'cd "{}" && {} --resume {}'.format(CODE, program, session_id)
+    separator = ";" if os.name == "nt" else "&&"
+    return 'cd "{}" {} {} --resume {}'.format(CODE, separator, program, session_id)
 
 
 def view(run, settings=None):

@@ -145,7 +145,7 @@ def _stock_photos(assets_dir, covered):
 def _image_rule(theirs, stock):
     if not theirs:
         return (
-            "Every one is a Pexels photograph, free for commercial use. None of them show\n"
+            "Every one is a stock photograph, free for commercial use. None of them show\n"
             "the real place, so the outreach message must say the images are temporary and\n"
             "get replaced with the owner's own once they are interested."
         )
@@ -158,7 +158,7 @@ def _image_rule(theirs, stock):
     if stock:
         lines.append("")
         lines.append(
-            "The ones marked \"stock\" are Pexels photographs filling what the client did not"
+            "The ones marked \"stock\" are stock photographs filling what the client did not"
         )
         lines.append(
             "supply. Those are temporary, and the outreach message has to say so without"
@@ -187,14 +187,15 @@ def _photo_lines(theirs, stock):
         )
     for photo in stock:
         lines.append(
-            "- `{}` — {}, stock. {} ({}x{}). Pexels, by {}, {}\n".format(
+            "- `{}` — {}, stock. {} ({}x{}). {}, by {}, {}\n".format(
                 photo["file"],
                 photo.get("purpose", "gallery"),
                 photo["description"] or photo["query"],
                 photo["width"],
                 photo["height"],
+                photo.get("source", "Pexels"),
                 photo["photographer"],
-                photo["pexels_url"],
+                photo.get("source_url") or photo.get("pexels_url"),
             )
         )
     return "".join(lines) or "- no images collected yet\n"
@@ -627,7 +628,13 @@ def _fill_assets(assets_dir, folders, business, settings):
     )
     _write_or_remove(
         assets_dir / "sources.json",
-        {"business": business, "source": "Pexels", "photos": [photo for _, photo in stock]} if stock else None,
+        {
+            "business": business,
+            "source": stock[0][1].get("source", "Pexels"),
+            "photos": [photo for _, photo in stock],
+        }
+        if stock
+        else None,
     )
     return len(planned)
 
