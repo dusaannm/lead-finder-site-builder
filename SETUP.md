@@ -6,8 +6,9 @@ written for someone opening the Google Cloud Console for the first time.
 Keys go into a `.env` file and nowhere else. That file never reaches GitHub.
 
 There are two accounts to make, Pexels and Google Cloud, then one file holding
-your own details, and one optional login for the autopilot. Start with Pexels,
-which takes two minutes and carries no risk at all.
+your own details, one optional login for the autopilot, and one optional token
+for publishing the sites. Start with Pexels, which takes two minutes and
+carries no risk at all.
 
 ---
 
@@ -326,3 +327,49 @@ Code session counted against your Claude plan, the same as typing the commands
 yourself, so **Sites per run** on the Settings page is the number to keep an
 eye on.
 
+---
+
+## 5. Cloudflare Pages for publishing the sites
+
+Optional. Skip it and every site stays on your computer, and the messages carry
+no link to it.
+
+### What it does
+
+Each finished site goes online at an address such as
+`golden-crust-chicago.pages.dev`, and that address goes into the messages, so
+the owner opens the demo with one tap. Every business gets its own Pages
+project, and publishing again after a change keeps the same address.
+
+### Cost
+
+Free, and Cloudflare's free plan carries no non-commercial clause, so demo
+sites for businesses you hope to win as clients are fine on it. The limits that
+matter here: 100 projects per account, 20,000 files per site and 25 MiB per
+file. One business is one project, so after a hundred of them, delete the
+projects of businesses that said no, in the dashboard under **Workers &
+Pages**.
+
+### Steps
+
+1. Sign up at **https://dash.cloudflare.com/sign-up**.
+2. Open **https://dash.cloudflare.com/profile/api-tokens** and click **Create
+   Token**, then **Create Custom Token**.
+3. **Token name:** `lead-finder`.
+4. **Permissions:** *Account*, *Cloudflare Pages*, *Edit*.
+5. **Account Resources:** *Include*, then your account.
+6. **Continue to summary**, then **Create Token**, and copy it straight away.
+   Cloudflare shows it once.
+7. Paste it into `.env` after `CLOUDFLARE_API_TOKEN=`.
+8. Leave `CLOUDFLARE_ACCOUNT_ID=` empty: the script finds the account on its own
+   when the token sees only one. If it says it sees several, copy the **Account
+   ID** shown on the right of **Workers & Pages** into that line.
+
+The **Publishing** panel on the Settings page then says the token is set.
+
+### Who can open the sites
+
+Everyone. Pages publishes with no login in front of the site. A brand new
+project's address can take a minute or two to start answering, so the script
+waits for it, and when it still does not open in time, publishing the same
+folder again a few minutes later picks it up.

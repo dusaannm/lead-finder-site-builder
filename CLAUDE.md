@@ -107,12 +107,14 @@ When asked to build the site, read that folder's `brief.md` and follow the
 
 `/autopilot <place_id or business name>` does both, then drafts the messages
 into `outreach.md` in the same folder, without asking anything: the answers come
-from the autopilot settings. The Autopilot tab in the browser starts it for each
-business it picks, as Claude Code in print mode with an allow-list of reading
-files, writing in the output folder and `data/autopilot`, and running
+from the autopilot settings. The Autopilot page in the browser starts it for
+each business it picks, as Claude Code in print mode with an allow-list of
+reading files, writing in the output folder and `data/autopilot`, and running
 `scripts/*.py`. Keep `commands/autopilot.md` working inside that list: no other
 shell command, no web access, `scripts/autopilot.py drop-photo` instead of
 deleting files by hand, and `scripts/add_gsap.py` instead of fetching GSAP.
+The Build a batch card on the same page runs `scripts/night_shift.py` through
+`scripts/shift_control.py`, as a process of its own that outlives the browser.
 `scripts/check_site.py` is the check it always runs, and
 `scripts/screenshot_site.py` is how it looks at the page with no browser of its
 own. Before the brief it writes a concept and chooses a layout direction from

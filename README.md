@@ -370,17 +370,40 @@ quote to the owner.
 ```
 
 Then open `http://localhost:5000`. This runs entirely on your own computer.
-Nothing is published and no one else can reach it.
+Nothing is published and no one else can reach it. On Windows, `start.bat`
+does both, and closing its window stops the page.
+
+**Build a batch**, on the Autopilot page, keeps searching random cities and
+trades until it has built the number of sites you ask for, and publishes each
+one. It runs on its own, so it goes on after the page is closed.
 
 On macOS, port 5000 is also where AirPlay Receiver listens. If the page refuses
 to load, or starting it fails with `Address already in use`, turn AirPlay
 Receiver off in System Settings, under General, AirDrop & Handoff.
 
-The page has three tabs. **Leads** is the table described here, and
-**Autopilot** and **Settings** are covered
-[further down](#autopilot-one-city-start-to-finish).
+The page is a small command center with a menu down the left side:
 
-The Leads tab shows your results as a table you can sort by clicking any
+- **Overview** counts what you have found, built and sent, shows the way from a
+  search to a yes as a pipeline, and lists what is waiting on you: messages
+  ready to send, follow ups that are due, a brief whose site was never built,
+  an address that did not open. Below that are the latest things you did and
+  the latest autopilot run.
+- **Leads** is the table described here.
+- **Autopilot** and **Settings** are covered
+  [further down](#autopilot-one-city-start-to-finish).
+- **Sites** shows every business folder in `brief.output_dir`, whether you
+  built it by hand or the autopilot did, with one of its photographs and how
+  far it got: brief, site, live, messages, sent. Each one opens its preview and
+  its public address, and holds its three messages, the ways to reach the
+  business and **I sent it**. A site that is still missing a step has a button
+  that copies the Claude Code command for that step.
+- **History** lists everything you have done, newest first and grouped by day:
+  searches, status changes, autopilot runs, briefs, built and published sites,
+  drafted and sent messages, and replies. It is read from the files the tool
+  already keeps, so it reaches back to your very first search. A search opens
+  on the Leads page and a run on the Autopilot page when you click it.
+
+The Leads page shows your results as a table you can sort by clicking any
 column. You can filter to businesses without a website, set a minimum rating or
 review count, and set a status on each row, which is saved the moment you
 choose it.
@@ -467,7 +490,7 @@ it yourself when the autopilot asks you to paste it.
 
 ### Autopilot: one city, start to finish
 
-The **Autopilot** tab does the whole job for a city:
+The **Autopilot** page does the whole job for a city:
 
 1. You type a city, or press **Random city**, and optionally a trade. Leave the
    trade empty and it picks one from the trades ticked in the settings.
@@ -476,32 +499,33 @@ The **Autopilot** tab does the whole job for a city:
    website and with a phone number to send the message to.
 3. For each one it downloads stock photographs, then has Claude Code write the
    brief, build the site, check it, and draft the three messages, all with the
-   answers from the **Settings** tab instead of questions. Several businesses
+   answers from the **Settings** page instead of questions. Several businesses
    are built at the same time, three by default.
 4. Each business then shows a link that opens its site, the folder it is in,
    the three messages with a copy button each, and the ways to reach it.
 5. You read the message, send it from your own account, and press **I sent it**
-   with the channel you used. That logs it exactly as `outreach.py --sent` does,
-   so the follow up reminder works the same.
+   with the channel you used, here or on the Sites page. That logs it exactly
+   as `outreach.py --sent` does, so the follow up reminder works the same.
 
 **Stop** ends a run at any point, the search included. A search already sent
 to the map server still finishes on its own, and its businesses appear on the
-Leads tab.
+Leads page.
 
-The manual way stays exactly as it was. The Leads tab, the questions
+The manual way stays exactly as it was. The Leads page, the questions
 `/build-brief` asks and the other commands are untouched by any of this.
 
 **Random cities** come from `autopilot.cities` in `config.yaml`: cities whose
 urban area holds about a million people or more, each with its country and the
-language its sites are written in. The Settings tab says whether the random
+language its sites are written in. The Settings page says whether the random
 choice comes from the United States, from English-speaking countries, from
 Europe or from the whole list. You can also type any city by hand; one the list
 does not know gets its site language decided while the brief is written.
 
-**The Settings tab** holds the answers `/build-brief` would otherwise ask for:
+**The Settings page** holds the answers `/build-brief` would otherwise ask for:
 the FAQ and careers sections, the rating, the animations, AI images, the site
 language and the stack, plus how many sites a run makes, how many of them are
-built at the same time, and what counts as a fit. They are saved to
+built at the same time, which model Claude Code uses and at what effort, from
+low to max, and what counts as a fit. They are saved to
 `data/autopilot_settings.json` on your computer and laid over the defaults in
 `config.yaml`. The page shows your sender name and how many portfolio links the
 messages carry, which still come from `config.local.yaml`.
@@ -529,14 +553,29 @@ when the animations are on. Each site it builds goes through
 one `<h1>`, the structured data, every image path and alt text, and that no
 lorem ipsum is left.
 
+**Publishing.** With a Cloudflare API token in `.env`, each finished site is
+published on Cloudflare Pages at its own address, such as
+`golden-crust-chicago.pages.dev`, and that address goes into the three
+messages, so you only have to send them. The card
+shows it as **Live at**. Without a token, or with **Publishing** switched off on
+the Settings page, sites stay on your computer as before. A site built by hand
+goes online the same way:
+
+```bash
+./run scripts/publish_site.py
+```
+
+[SETUP.md](SETUP.md#5-cloudflare-pages-for-publishing-the-sites) covers the
+token. The free plan allows commercial use.
+
 **Watching it work.** While a site is being built, its card shows what Claude
-Code is doing at that moment, the step count and the model. Once it is done,
-the card says which model built it, how many minutes of work it took, and gives
-the command that opens that Claude Code session in a terminal, so you can keep
-working on the site there, for example to change the colours. These sessions do
-not show in the Claude desktop app's sidebar, which only lists sessions the app
-started itself. The run also shows how much of your Claude plan's five-hour and
-weekly limits is used.
+Code is doing at that moment, the step count and the model. Once it is done, the
+card says which model built it at what effort, how many minutes of work it took,
+and gives the command that opens that Claude Code session in a terminal, so you
+can keep working on the site there, for example to change the colours. These
+sessions do not show in the Claude desktop app's sidebar, which only lists
+sessions the app started itself. The run also shows how much of your Claude
+plan's five-hour and weekly limits is used.
 
 **Reaching the business.** Under the messages, each business lists every way
 to contact it that is known: a phone call, WhatsApp with the short message
@@ -606,9 +645,11 @@ searched for, for example `data/leads_bakery-novi-sad.csv`. Cyrillic is spelled
 out in Latin for the name, so `пекара Нови Сад` and `pekara Novi Sad` are the
 same search and share one file.
 
-The last three columns, `email`, `instagram` and `facebook`, are filled from
-OpenStreetMap where the map has them. Files from before those columns existed
-still open, and gain them the next time they are saved.
+The columns `email`, `instagram` and `facebook` are filled from OpenStreetMap
+where the map has them. The last one, `status_changed_at`, is when you last
+changed the status of that row, which is how the History page knows. Files from
+before those columns existed still open, and gain them the next time they are
+saved.
 
 That file is the database. There is no database.
 

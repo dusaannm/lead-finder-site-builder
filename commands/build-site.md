@@ -100,6 +100,16 @@ Fix what you find, re-check, then screenshot both widths and show them.
 
 Leave the server running so they can click around, and tell them the address.
 
+To put it online for the owner to see, publish it on Cloudflare Pages. This
+needs `CLOUDFLARE_API_TOKEN` in `.env`, as section 5 of `SETUP.md` explains:
+
+```
+{venv python} scripts/publish_site.py
+```
+
+It publishes every finished site that is not online yet and prints each public
+address, which also replaces the demo link in that site's `outreach.md`.
+
 ## 4. Report
 
 Say which files you wrote, list what the owner could still add, and give one

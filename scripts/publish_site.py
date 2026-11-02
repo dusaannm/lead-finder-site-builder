@@ -6,6 +6,7 @@ import re
 import shutil
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 from urllib.parse import unquote
 
@@ -43,6 +44,14 @@ def credentials():
     if not token or not account:
         raise PublishError("CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID have to be in .env.")
     return token, account
+
+
+def is_set_up(settings):
+    try:
+        credentials()
+    except PublishError:
+        return False
+    return bool(settings["publish"]["enabled"])
 
 
 def manifest_path(root=None):
@@ -183,7 +192,9 @@ def publish(sites, settings, root=None):
     for site in sites:
         slug = slug_for(site["name"], site.get("city", ""))
         stage(site["folder"], pages_dir / slug, site["name"], sender, options)
-        staged[site["place_id"]] = dict(site, slug=slug, url="https://{}/{}/".format(host, slug))
+        staged[site["place_id"]] = dict(
+            site, slug=slug, url="https://{}/{}/".format(host, slug), published_at=datetime.now().isoformat(timespec="seconds")
+        )
     if not staged:
         return {}
 

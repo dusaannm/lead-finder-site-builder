@@ -61,8 +61,16 @@ PHOTO_ID = re.compile(r"_(\d+)\.(?:jpe?g|png|webp)", re.IGNORECASE)
 PHOTO_PAGES = {".html", ".css"}
 
 SITE_FLAGS = ["faq", "careers", "show_reviews", "animations", "ai_media"]
-SEARCH_FLAGS = ["only_without_website", "require_phone", "require_online_contact", "only_rated"]
-BUILDER_FIELDS = ["command", "model", "timeout_minutes", "parallel"]
+SEARCH_FLAGS = ["only_without_website", "require_phone", "require_online_contact", "only_rated", "deploy"]
+BUILDER_FIELDS = ["command", "model", "timeout_minutes", "parallel", "effort"]
+EFFORTS = {
+    "": "Claude Code's own default",
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "xhigh": "Extra high",
+    "max": "Max",
+}
 ACTIVE_STATES = {"searching", "building"}
 
 UNATTENDED = """You are running unattended. The autopilot in the lead-finder browser page
@@ -114,7 +122,9 @@ def _whole(value, low, high, label):
         number = int(str(value).strip())
     except ValueError:
         raise AutopilotError("{} has to be a whole number, not {}.".format(label, value))
-    if not low <= number <= high:
+    if number < low:
+        raise AutopilotError("{} has to be at least {}, not {}.".format(label, low, number))
+    if high is not None and number > high:
         raise AutopilotError("{} has to be between {} and {}, not {}.".format(label, low, high, number))
     return number
 
@@ -164,10 +174,10 @@ def clean(payload, current):
     result = json.loads(json.dumps(current))
 
     if "sites_per_run" in payload:
-        result["sites_per_run"] = _whole(payload["sites_per_run"], 1, 10, "Sites per run")
+        result["sites_per_run"] = _whole(payload["sites_per_run"], 1, None, "Sites per run")
     if "search_limit" in payload:
-        result["search_limit"] = _whole(payload["search_limit"], 10, 500, "Businesses to look through")
-    for key in SEARCH_FLAGS:
+        result["search_limit"] = _whole(payload["search_limit"], 10, None, "Businesses to look through")
+    for key in RUN_FLAGS:
         if key in payload:
             result[key] = _flag(payload[key], key)
     if "min_reviews" in payload:
@@ -202,7 +212,11 @@ def clean(payload, current):
     if "timeout_minutes" in builder:
         result["builder"]["timeout_minutes"] = _whole(builder["timeout_minutes"], 5, 240, "The time limit")
     if "parallel" in builder:
-        result["builder"]["parallel"] = _whole(builder["parallel"], 1, 5, "Sites built at the same time")
+        result["builder"]["parallel"] = _whole(builder["parallel"], 1, None, "Sites built at the same time")
+    if "effort" in builder:
+        if builder["effort"] not in EFFORTS:
+            raise AutopilotError("The effort is one of: {}.".format(", ".join(name for name in EFFORTS if name)))
+        result["builder"]["effort"] = builder["effort"]
 
     return result
 
@@ -219,7 +233,7 @@ def save(payload, settings=None, root=None):
         "site": cleaned["site"],
         "builder": {key: cleaned["builder"][key] for key in BUILDER_FIELDS},
     }
-    stored.update({key: cleaned[key] for key in SEARCH_FLAGS})
+    stored.update({key: cleaned[key] for key in RUN_FLAGS})
     _write_json(settings_file(root), stored)
     return cleaned
 
@@ -610,13 +624,18 @@ def builder_command(executable, opts, settings, needs_a_build=False, root=None):
         allowed += ["Bash(npm *)", "Bash(npx *)"]
     command = [executable, "-p", "--permission-mode", "dontAsk", "--allowedTools"] + allowed
     command += ["--add-dir", str(Path(output).resolve()), "--output-format", "stream-json", "--verbose"]
+    return command + _model_and_effort(opts)
+
+
+def _model_and_effort(opts):
+    extra = []
     model = (opts["builder"]["model"] or "").strip()
     if model:
-        command += ["--model", model]
-    effort = (opts["builder"]["effort"] or "").strip()
+        extra += ["--model", model]
+    effort = (opts["builder"].get("effort") or "").strip()
     if effort:
-        command += ["--effort", effort]
-    return command
+        extra += ["--effort", effort]
+    return extra
 
 
 def _parse_reply(text):
@@ -786,9 +805,7 @@ def check_builder(opts, settings=None):
             "message": "No Claude Code was found on this computer.",
         }
     command = [executable, "-p", CHECK_PROMPT, "--permission-mode", "dontAsk", "--output-format", "json"]
-    command += ["--no-session-persistence"]
-    if (opts["builder"]["model"] or "").strip():
-        command += ["--model", opts["builder"]["model"].strip()]
+    command += ["--no-session-persistence"] + _model_and_effort(opts)
     seconds = opts["builder"]["check_timeout_seconds"]
     try:
         finished = subprocess.run(
@@ -949,6 +966,7 @@ def _build_one(candidate, run, settings, opts, stop_event, build):
         "minutes": outcome.get("minutes") or 0,
         "steps": found["steps"],
         "limits": found["limits"],
+        "effort": opts["builder"].get("effort") or "",
         "finished": _now(),
     }
     if outcome["not_logged_in"]:
@@ -1158,6 +1176,13 @@ def _outcome(candidates, found):
     return "Picked {} of {} businesses: {}.".format(len(candidates), found, ", ".join(counts))
 
 
+def publish_finished(settings):
+    if not options(settings)["deploy"] or not publish_site.is_set_up(settings):
+        return []
+    sites = publish_site.unpublished_sites()
+    return list(publish_site.publish(sites, settings).values()) if sites else []
+
+
 class Runner:
     def __init__(self):
         self.lock = threading.Lock()
@@ -1187,6 +1212,7 @@ class Runner:
     def _guarded(self, run, settings, hooks):
         try:
             execute(run, settings, self.stop_event, **hooks)
+            publish_finished(settings)
         except Exception as error:
             run.update(state="failed", message="Unexpected failure: {}".format(error), finished=_now())
 
@@ -1233,13 +1259,13 @@ def list_runs(runner=None, root=None, limit=20):
         run = load_run(path.stem, runner, root)
         if run:
             found.append(
-                {key: run.state.get(key) for key in ("id", "started", "query", "state", "found")}
+                {key: run.state.get(key) for key in ("id", "started", "finished", "query", "state", "message", "found")}
                 | {"sites": len(run.state.get("candidates", []))}
             )
     return found
 
 
-def _site_url(page, settings):
+def site_url(page, settings):
     base = build_brief.output_dir(settings).resolve()
     relative = Path(page).resolve().relative_to(base).as_posix()
     return "/sites/" + quote(relative)
@@ -1373,13 +1399,15 @@ def view(run, settings=None):
     state = run.snapshot()
     published = publish_site.load_manifest()
     latest = (None, "")
+    sent_log = outreach_log.load(ROOT)
     for candidate in state.get("candidates", []):
         folder = Path(candidate["folder"]) if candidate["folder"] else None
         found = messages(folder) if folder else []
         page = check_site.entry_page(folder) if folder else None
         candidate["messages"] = found
-        candidate["demo_url"] = published.get(candidate["place_id"], {}).get("url", "")
-        candidate["site_url"] = _site_url(page, settings) if page else ""
+        candidate["site_url"] = site_url(page, settings) if page else ""
+        candidate["live_url"] = published.get(candidate["place_id"], {}).get("url", "")
+        candidate["live_public"] = bool(candidate["live_url"])
         if candidate["state"] in ("paste", "stopped") and found and page:
             candidate["problems"] = verify_project(folder)
             candidate["state"] = "attention" if candidate["problems"] else "done"
@@ -1392,6 +1420,12 @@ def view(run, settings=None):
         _refresh_contacts(candidate)
         candidate["contacts"] = contact_links(candidate, found, settings)
         candidate["resume"] = _resume_command(candidate.get("session_id"), opts)
+        logged = [
+            {"channel": item["channel"], "on": item["sent_at"]}
+            for item in sent_log
+            if item["place_id"] == candidate["place_id"] and item.get("sent_at")
+        ]
+        candidate["sent"] = logged or candidate.get("sent", [])
     state["plan_usage"] = plan_usage(latest[0])
     return state
 

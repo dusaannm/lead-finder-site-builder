@@ -8,9 +8,12 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 import autopilot
 import build_brief
+import dashboard
 import lead_search
 import lead_store
 import ready_list
+import shift_control
+import outreach_log
 
 app = Flask(__name__)
 RUNNER = autopilot.Runner()
@@ -36,10 +39,42 @@ def index():
 
 @app.get("/api/usage")
 def usage():
-    summary = lead_search.usage_summary()
+    settings = lead_search.load_settings()
+    summary = lead_search.usage_summary(settings)
     summary["has_google_key"] = bool(lead_search.google_key())
     summary["gosom"] = lead_search.gosom_enabled()
+    summary["has_builder"] = bool(autopilot.find_builder(autopilot.options(settings)))
+    summary["has_publishing"] = autopilot.publish_site.is_set_up(settings)
     return jsonify(summary)
+
+
+@app.get("/api/overview")
+def overview():
+    return jsonify(dashboard.overview(dashboard.gather(runner=RUNNER), RUNNER))
+
+
+@app.get("/api/history")
+def history():
+    return jsonify({"events": dashboard.history(dashboard.gather(runner=RUNNER))})
+
+
+@app.get("/api/sites")
+def sites():
+    settings = lead_search.load_settings()
+    return jsonify({
+        "sites": dashboard.gather(settings, RUNNER)["sites"],
+        "channels": settings["outreach"]["channels"],
+    })
+
+
+@app.post("/api/sites/sent")
+def site_sent():
+    payload = request.get_json(silent=True) or {}
+    try:
+        row = dashboard.record_send(payload.get("place_id") or "", payload.get("channel") or "")
+    except outreach_log.OutreachError as error:
+        return jsonify({"error": str(error)}), 400
+    return jsonify({"sent_at": row["sent_at"], "follow_up_due": row["follow_up_due"]})
 
 
 @app.get("/api/settings")
@@ -144,8 +179,10 @@ def _autopilot_page_data():
     return {
         "settings": {key: value for key, value in opts.items() if key != "cities"},
         "cities": opts["cities"],
-        "regions": autopilot.REGIONS,
-        "stacks": {key: stack["name"] for key, stack in autopilot.STACKS.items()},
+        "regions": list(autopilot.REGIONS.items()),
+        "stacks": [[key, stack["name"]] for key, stack in autopilot.STACKS.items()],
+        "efforts": list(autopilot.EFFORTS.items()),
+        "has_publishing": autopilot.publish_site.is_set_up(settings),
         "trades": opts["trade_options"],
         "builder": autopilot.find_builder(opts) or "",
         "sender_name": settings["outreach"]["sender_name"],
@@ -180,6 +217,8 @@ def autopilot_check():
 @app.post("/api/autopilot/start")
 def autopilot_start():
     payload = request.get_json(silent=True) or {}
+    if shift_control.status()["running"]:
+        return jsonify({"error": "A batch is going. Stop it, or wait for it to finish."}), 409
     try:
         state = RUNNER.start(
             city_text=payload.get("city") or "",
@@ -189,6 +228,28 @@ def autopilot_start():
     except autopilot.AutopilotError as error:
         return jsonify({"error": str(error)}), 409 if RUNNER.busy() else 400
     return jsonify({"id": state["id"]})
+
+
+@app.get("/api/shift")
+def shift_status():
+    return jsonify(shift_control.status())
+
+
+@app.post("/api/shift/start")
+def shift_start():
+    payload = request.get_json(silent=True) or {}
+    if RUNNER.busy():
+        return jsonify({"error": "A run is going. Stop it, or wait for it to finish."}), 409
+    try:
+        shift_control.start(payload.get("sites"), payload.get("hours"))
+    except shift_control.ShiftError as error:
+        return jsonify({"error": str(error)}), 400
+    return jsonify(shift_control.status())
+
+
+@app.post("/api/shift/stop")
+def shift_stop():
+    return jsonify({"stopping": shift_control.stop()})
 
 
 @app.post("/api/autopilot/stop")

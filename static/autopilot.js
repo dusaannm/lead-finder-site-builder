@@ -1,4 +1,3 @@
-const VIEWS = ["leads", "autopilot", "settings"];
 const ACTIVE_RUN_STATES = ["searching", "building"];
 const POLL_ACTIVE_MS = 3000;
 const POLL_WAITING_MS = 10000;
@@ -25,10 +24,10 @@ const autopilot = {
   data: null,
   runId: "",
   pollTimer: null,
+  loading: null,
 };
 
 const parts = {
-  tabs: document.querySelectorAll(".tab"),
   form: document.getElementById("autopilot-form"),
   city: document.getElementById("autopilot-city"),
   random: document.getElementById("autopilot-random"),
@@ -66,6 +65,9 @@ const parts = {
   style: document.getElementById("set-style"),
   command: document.getElementById("set-command"),
   model: document.getElementById("set-model"),
+  effort: document.getElementById("set-effort"),
+  deploy: document.getElementById("set-deploy"),
+  deployState: document.getElementById("deploy-state"),
   timeout: document.getElementById("set-timeout"),
   parallel: document.getElementById("set-parallel"),
   builderState: document.getElementById("builder-state"),
@@ -101,20 +103,6 @@ async function copyText(text, button) {
     button.textContent = original;
     button.classList.remove("copied");
   }, 1600);
-}
-
-function showView(name) {
-  const chosen = VIEWS.includes(name) ? name : "leads";
-  VIEWS.forEach((view) => {
-    document.getElementById("view-" + view).hidden = view !== chosen;
-  });
-  parts.tabs.forEach((tab) => {
-    tab.classList.toggle("active", tab.dataset.view === chosen);
-    tab.setAttribute("aria-selected", String(tab.dataset.view === chosen));
-  });
-  if (chosen !== "leads" && !autopilot.data) {
-    loadAutopilot();
-  }
 }
 
 function fillOptions(select, entries, chosen) {
@@ -167,7 +155,7 @@ function senderNote(data) {
 
 function renderSettings(data) {
   const settings = data.settings;
-  fillOptions(parts.citiesFrom, Object.entries(data.regions), settings.cities_from);
+  fillOptions(parts.citiesFrom, data.regions, settings.cities_from);
   parts.sites.value = settings.sites_per_run;
   parts.searchLimit.value = settings.search_limit;
   parts.noWebsite.checked = settings.only_without_website;
@@ -183,10 +171,15 @@ function renderSettings(data) {
   parts.animations.checked = settings.site.animations;
   parts.ai.checked = settings.site.ai_media;
   fillOptions(parts.language, languageChoices(data), settings.site.language.toLowerCase() === "city" ? "city" : settings.site.language);
-  fillOptions(parts.stack, Object.entries(data.stacks), settings.site.stack);
+  fillOptions(parts.stack, data.stacks, settings.site.stack);
   parts.style.value = settings.site.style;
   parts.command.value = settings.builder.command;
   parts.model.value = settings.builder.model;
+  fillOptions(parts.effort, data.efforts, settings.builder.effort || "");
+  parts.deploy.checked = settings.deploy;
+  parts.deployState.textContent = data.has_publishing
+    ? "CLOUDFLARE_API_TOKEN is set in .env."
+    : "CLOUDFLARE_API_TOKEN is not set in .env, so nothing is published yet. Section 5 of SETUP.md shows how to get one.";
   parts.timeout.value = settings.builder.timeout_minutes;
   parts.parallel.value = settings.builder.parallel;
   parts.builderState.textContent = data.builder ? "Found at " + data.builder + "." : "Not found on this computer.";
@@ -208,6 +201,16 @@ function renderAutopilotForm(data) {
     parts.tradeList.append(option);
   });
   parts.builderNote.textContent = builderNote(data);
+}
+
+function ensureAutopilot() {
+  if (autopilot.data) return Promise.resolve();
+  if (!autopilot.loading) {
+    autopilot.loading = loadAutopilot().finally(() => {
+      autopilot.loading = null;
+    });
+  }
+  return autopilot.loading;
 }
 
 async function loadAutopilot() {
@@ -258,7 +261,7 @@ function knownCity(text) {
 
 async function startRun(event) {
   event.preventDefault();
-  if (!autopilot.data) await loadAutopilot();
+  await ensureAutopilot();
   const city = parts.city.value.trim();
   if (!city) {
     say(parts.status, "Type a city, or press Random city.", true);
@@ -401,6 +404,16 @@ function candidateCard(run, candidate) {
   }
 
   const links = element("div", "candidate-links");
+  if (candidate.live_url) {
+    const live = element("a", "live-link", "Live at " + candidate.live_url.replace(/^https:\/\//, ""));
+    live.href = candidate.live_url;
+    live.target = "_blank";
+    live.rel = "noopener";
+    links.append(live);
+    if (!candidate.live_public) {
+      links.append(element("span", "problems", "This address did not open yet, so it is not in the messages. Publish it again in a few minutes."));
+    }
+  }
   if (candidate.site_url) {
     const open = element("a", "", "Open the site");
     open.href = candidate.site_url;
@@ -437,9 +450,11 @@ function workLine(candidate) {
     return (live.now ? "Now: " + live.now + " · " : "Starting · ") + steps + " so far" + model;
   }
   if (candidate.models && candidate.models.length) {
+    const names = Object.fromEntries(autopilot.data.efforts);
+    const effort = candidate.effort ? " at " + (names[candidate.effort] || candidate.effort).toLowerCase() + " effort" : "";
     const minutes = candidate.minutes ? " in " + candidate.minutes + " min of work" : "";
     const steps = candidate.steps ? ", " + candidate.steps + " steps" : "";
-    return "Built by " + candidate.models.join(", ") + minutes + steps + ".";
+    return "Built by " + candidate.models.join(", ") + effort + minutes + steps + ".";
   }
   return "";
 }
@@ -529,6 +544,7 @@ function settingsPayload() {
     only_rated: parts.rated.checked,
     min_rating: parts.minRating.value,
     min_reviews: parts.minReviews.value,
+    deploy: parts.deploy.checked,
     trades: [...parts.trades.querySelectorAll("input:checked")].map((box) => box.value),
     site: {
       faq: parts.faq.checked,
@@ -543,6 +559,7 @@ function settingsPayload() {
     builder: {
       command: parts.command.value,
       model: parts.model.value,
+      effort: parts.effort.value,
       timeout_minutes: parts.timeout.value,
       parallel: parts.parallel.value,
     },
@@ -603,21 +620,12 @@ async function stopRun() {
   }
 }
 
-parts.tabs.forEach((tab) => {
-  tab.addEventListener("click", () => {
-    history.replaceState(null, "", "#" + tab.dataset.view);
-    showView(tab.dataset.view);
-  });
-});
 parts.form.addEventListener("submit", startRun);
 parts.random.addEventListener("click", async () => {
-  if (!autopilot.data) await loadAutopilot();
+  await ensureAutopilot();
   pickRandomCity();
 });
 parts.runSelect.addEventListener("change", () => showRun(parts.runSelect.value));
 parts.runStop.addEventListener("click", stopRun);
 parts.settingsForm.addEventListener("submit", saveSettings);
 parts.builderCheck.addEventListener("click", checkBuilder);
-window.addEventListener("hashchange", () => showView(location.hash.slice(1)));
-
-showView(location.hash.slice(1));

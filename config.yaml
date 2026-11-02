@@ -137,6 +137,10 @@ lead_quality:
     - contact
     - sales
     - office
+dashboard:
+  recent_events: 8
+  shift_log_lines: 6
+  card_quality: 80
 
 scoring:
   no_website: 50
@@ -480,6 +484,7 @@ asset_sorting:
 autopilot:
   sites_per_run: 3
   keep_awake: true
+  deploy: true
   search_limit: 150
   only_without_website: true
   require_phone: true
