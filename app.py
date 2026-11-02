@@ -10,6 +10,7 @@ import autopilot
 import build_brief
 import lead_search
 import lead_store
+import ready_list
 
 app = Flask(__name__)
 RUNNER = autopilot.Runner()
@@ -37,6 +38,7 @@ def index():
 def usage():
     summary = lead_search.usage_summary()
     summary["has_google_key"] = bool(lead_search.google_key())
+    summary["gosom"] = lead_search.gosom_enabled()
     return jsonify(summary)
 
 
@@ -136,15 +138,6 @@ def export():
     return send_file(path, as_attachment=True, download_name=path.name)
 
 
-def _trade_words(categories):
-    chosen = {}
-    for name in categories:
-        key = lead_store.to_slug(name, "")
-        if key not in chosen or chosen[key].isascii():
-            chosen[key] = name
-    return sorted(chosen.values())
-
-
 def _autopilot_page_data():
     settings = lead_search.load_settings()
     opts = autopilot.options(settings)
@@ -153,9 +146,10 @@ def _autopilot_page_data():
         "cities": opts["cities"],
         "regions": autopilot.REGIONS,
         "stacks": {key: stack["name"] for key, stack in autopilot.STACKS.items()},
-        "trades": _trade_words(settings["osm_categories"]),
+        "trades": opts["trade_options"],
         "builder": autopilot.find_builder(opts) or "",
         "sender_name": settings["outreach"]["sender_name"],
+        "sender_about": settings["outreach"]["sender_about"],
         "portfolio_links": len(settings["outreach"]["portfolio_links"] or []),
         "channels": settings["outreach"]["channels"],
         "default_language": settings["brief"]["default_language"],
@@ -226,6 +220,11 @@ def autopilot_sent(run_id):
     except autopilot.AutopilotError as error:
         return jsonify({"error": str(error)}), 400
     return jsonify({"sent_at": row["sent_at"], "follow_up_due": row["follow_up_due"]})
+
+
+@app.get("/ready")
+def ready():
+    return send_file(ready_list.write())
 
 
 @app.get("/sites/<path:relative>")

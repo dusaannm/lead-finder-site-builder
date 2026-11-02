@@ -62,6 +62,24 @@ contacts:
     - google.com
     - apple.com
 
+publish:
+  enabled: false
+  project: ""
+  wrangler: ""
+  pages_dir: ""
+  cache_dir: ""
+  timeout_minutes: 10
+  demo_note: "Demo preview made by {sender} for {name}. This is not the official website of the business."
+
+night:
+  hours: 7
+  max_sites: 20
+  pause_minutes: 15
+  pause_at_five_hour: 0.85
+  after_reset_seconds: 120
+  stop_at_weekly: 0.6
+  give_up_after_failures: 3
+
 lead_quality:
   chain_min_locations: 3
   chains:
@@ -182,6 +200,23 @@ outreach:
       real_estate_agency: 650
       lawyer: 700
       hotel: 700
+      tailor: 300
+      nail: 350
+      massage: 400
+      yoga: 400
+      cleaning: 400
+      detailing: 400
+      groom: 400
+      handyman: 400
+      locksmith: 450
+      landscap: 450
+      photographer: 450
+      plumb: 500
+      electric: 500
+      moving: 500
+      chiropract: 550
+      roofing: 600
+      hvac: 600
     review_bonus:
       - {reviews: 200, amount: 50}
       - {reviews: 1000, amount: 50}
@@ -362,6 +397,67 @@ stock_photos:
       gallery: ["washing machine close up", "steam iron on shirt"]
       background: ["white fabric texture", "pale blue clean surface"]
       interior: ["laundrette interior bright"]
+    plumber:
+      hero: ["plumber fixing pipe", "plumbing tools on floor"]
+      gallery: ["copper pipes close up", "wrench on pipe"]
+      background: ["brushed metal texture", "clean tile wall"]
+      interior: ["modern bathroom sink", "kitchen sink faucet"]
+    electrician:
+      hero: ["electrician working on panel", "electrical work tools"]
+      gallery: ["electric wires close up", "light switch installation"]
+      background: ["dark metal surface", "soft grey wall texture"]
+      interior: ["bright modern room lighting"]
+    roofing_contractor:
+      hero: ["roofer on house roof", "new shingle roof house"]
+      gallery: ["roof shingles close up", "roofing tools"]
+      background: ["clear blue sky", "grey slate texture"]
+      interior: ["house exterior suburban roof"]
+    landscaper:
+      hero: ["landscaped garden lawn", "gardener trimming hedge"]
+      gallery: ["fresh cut grass close up", "garden stone path"]
+      background: ["green leaves texture", "soil texture"]
+      interior: ["backyard patio garden"]
+    house_cleaning_service: &cleaning
+      hero: ["clean bright living room", "cleaner wiping kitchen counter"]
+      gallery: ["cleaning supplies close up", "spotless kitchen"]
+      background: ["white clean surface", "soft blue wall texture"]
+      interior: ["tidy modern home interior"]
+    cleaning_service: *cleaning
+    nail_salon:
+      hero: ["nail salon interior", "manicure at salon"]
+      gallery: ["painted nails close up", "nail polish bottles"]
+      background: ["soft pink marble texture", "pastel surface"]
+      interior: ["beauty salon chairs bright"]
+    car_detailing_service:
+      hero: ["car detailing polishing", "shiny black car"]
+      gallery: ["water beads on car paint", "polishing machine on car"]
+      background: ["dark metallic surface", "carbon texture"]
+      interior: ["clean car interior leather"]
+    pet_groomer:
+      hero: ["dog being groomed", "dog grooming salon"]
+      gallery: ["washed dog close up", "grooming brush dog"]
+      background: ["soft warm wall texture", "pale wood surface"]
+      interior: ["pet grooming table"]
+    locksmith:
+      hero: ["locksmith changing door lock", "keys on table"]
+      gallery: ["door lock close up", "bunch of keys"]
+      background: ["brushed metal texture dark", "wood door texture"]
+      interior: ["front door entrance house"]
+    moving_company:
+      hero: ["movers carrying boxes", "moving truck loading"]
+      gallery: ["cardboard boxes stacked", "packing tape boxes"]
+      background: ["cardboard texture", "pale wall texture"]
+      interior: ["empty room moving boxes"]
+    tailor:
+      hero: ["tailor sewing suit", "tailor shop interior"]
+      gallery: ["sewing machine close up", "measuring tape fabric"]
+      background: ["fabric texture neutral", "linen texture"]
+      interior: ["tailor workshop"]
+    handyman:
+      hero: ["handyman with tool belt", "home repair tools"]
+      gallery: ["drill close up", "toolbox open"]
+      background: ["wood plank texture", "soft grey wall texture"]
+      interior: ["house repair room"]
 
 asset_sorting:
   categories:
@@ -385,6 +481,7 @@ autopilot:
   only_without_website: true
   require_phone: true
   require_online_contact: true
+  only_rated: false
   min_rating: 4.0
   min_reviews: 20
   cities_from: us
@@ -397,6 +494,55 @@ autopilot:
     - beauty salon
     - florist
     - car repair
+  trade_options:
+    - accountant
+    - auto detailing
+    - bakery
+    - bar
+    - barber
+    - beauty salon
+    - cafe
+    - car repair
+    - car wash
+    - carpenter
+    - chiropractor
+    - clothing store
+    - dentist
+    - doctor
+    - driving school
+    - dry cleaner
+    - electrician
+    - fence contractor
+    - fitness gym
+    - flooring contractor
+    - florist
+    - garage door repair
+    - hairdresser
+    - handyman
+    - house cleaning
+    - hvac contractor
+    - jeweler
+    - landscaper
+    - lawyer
+    - locksmith
+    - massage therapist
+    - moving company
+    - nail salon
+    - optician
+    - painter
+    - pest control
+    - pet groomer
+    - photographer
+    - pizzeria
+    - plumber
+    - real estate agent
+    - restaurant
+    - roofing contractor
+    - tailor
+    - tattoo shop
+    - tire shop
+    - veterinarian
+    - yoga studio
   site:
     language: city
     faq: true
@@ -423,6 +569,26 @@ autopilot:
     - {name: San Antonio, country: United States, code: us, language: English, region: north_america}
     - {name: San Diego, country: United States, code: us, language: English, region: north_america}
     - {name: Dallas, country: United States, code: us, language: English, region: north_america}
+    - {name: Austin, country: United States, code: us, language: English, region: north_america}
+    - {name: Jacksonville, country: United States, code: us, language: English, region: north_america}
+    - {name: Columbus, country: United States, code: us, language: English, region: north_america}
+    - {name: Charlotte, country: United States, code: us, language: English, region: north_america}
+    - {name: Indianapolis, country: United States, code: us, language: English, region: north_america}
+    - {name: Seattle, country: United States, code: us, language: English, region: north_america}
+    - {name: Denver, country: United States, code: us, language: English, region: north_america}
+    - {name: Boston, country: United States, code: us, language: English, region: north_america}
+    - {name: Nashville, country: United States, code: us, language: English, region: north_america}
+    - {name: Portland, country: United States, code: us, language: English, region: north_america}
+    - {name: Las Vegas, country: United States, code: us, language: English, region: north_america}
+    - {name: Atlanta, country: United States, code: us, language: English, region: north_america}
+    - {name: Miami, country: United States, code: us, language: English, region: north_america}
+    - {name: Tampa, country: United States, code: us, language: English, region: north_america}
+    - {name: Minneapolis, country: United States, code: us, language: English, region: north_america}
+    - {name: Detroit, country: United States, code: us, language: English, region: north_america}
+    - {name: Baltimore, country: United States, code: us, language: English, region: north_america}
+    - {name: Sacramento, country: United States, code: us, language: English, region: north_america}
+    - {name: Kansas City, country: United States, code: us, language: English, region: north_america}
+    - {name: Cleveland, country: United States, code: us, language: English, region: north_america}
     - {name: Toronto, country: Canada, code: ca, language: English, region: north_america}
     - {name: Montreal, country: Canada, code: ca, language: French, region: north_america, aliases: [Montréal]}
     - {name: Calgary, country: Canada, code: ca, language: English, region: north_america}

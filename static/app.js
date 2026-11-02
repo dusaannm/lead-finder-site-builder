@@ -50,10 +50,10 @@ async function requestJson(url, options) {
 async function loadUsage() {
   try {
     const data = await requestJson("/api/usage");
-    const source = data.has_google_key ? "Google Places" : "OpenStreetMap (no key)";
+    const source = data.gosom ? "Google Maps through gosom" : data.has_google_key ? "Google Places" : "OpenStreetMap (no key)";
     elements.usage.innerHTML =
       "Source: <strong>" + source + "</strong><br>" +
-      "Google calls this month: <strong>" + data.used + "</strong> of " + data.limit;
+      '<a href="/ready" target="_blank" rel="noopener">Ready to contact</a>';
   } catch (error) {
     elements.usage.textContent = "";
   }

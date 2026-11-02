@@ -25,6 +25,7 @@ import lead_search
 import lead_store
 import outreach_log
 import pricing
+import publish_site
 
 ROOT = lead_search.ROOT
 CODE = Path(__file__).resolve().parent.parent
@@ -53,7 +54,7 @@ STACKS = {
 }
 
 SITE_FLAGS = ["faq", "careers", "show_reviews", "animations", "ai_media"]
-SEARCH_FLAGS = ["only_without_website", "require_phone"]
+SEARCH_FLAGS = ["only_without_website", "require_phone", "require_online_contact", "only_rated"]
 BUILDER_FIELDS = ["command", "model", "timeout_minutes", "parallel"]
 ACTIVE_STATES = {"searching", "building"}
 
@@ -111,6 +112,16 @@ def _whole(value, low, high, label):
     return number
 
 
+def _rating(value):
+    try:
+        rating = float(str(value).strip())
+    except ValueError:
+        raise AutopilotError("The minimum rating has to be a number, not {}.".format(value))
+    if not 0 <= rating <= 5:
+        raise AutopilotError("The minimum rating has to be between 0 and 5, not {}.".format(rating))
+    return rating
+
+
 def _flag(value, label):
     if not isinstance(value, bool):
         raise AutopilotError("{} has to be on or off.".format(label))
@@ -152,6 +163,10 @@ def clean(payload, current):
     for key in SEARCH_FLAGS:
         if key in payload:
             result[key] = _flag(payload[key], key)
+    if "min_reviews" in payload:
+        result["min_reviews"] = _whole(payload["min_reviews"], 0, 100000, "Minimum reviews")
+    if "min_rating" in payload:
+        result["min_rating"] = _rating(payload["min_rating"])
     if "cities_from" in payload:
         if payload["cities_from"] not in REGIONS:
             raise AutopilotError("Random cities come from one of: {}.".format(", ".join(REGIONS)))
@@ -190,6 +205,8 @@ def save(payload, settings=None, root=None):
     stored = {
         "sites_per_run": cleaned["sites_per_run"],
         "search_limit": cleaned["search_limit"],
+        "min_rating": cleaned["min_rating"],
+        "min_reviews": cleaned["min_reviews"],
         "cities_from": cleaned["cities_from"],
         "trades": cleaned["trades"],
         "site": cleaned["site"],
@@ -300,6 +317,8 @@ def choose_candidates(rows, opts, settings, root=None, still_a_fit=None):
         if opts["only_without_website"] and (row.get("website") or "").strip():
             continue
         if opts["require_phone"] and not (row.get("phone") or "").strip():
+            continue
+        if opts["only_rated"] and not str(row.get("rating") or "").strip():
             continue
         if not lead_quality.meets_quality(row, opts):
             continue
@@ -993,6 +1012,7 @@ def _execute(run, settings, opts, stop_event, search, collect, build, building, 
     builder =(find_builder(opts) or "") if building else ""
     run.update(
         leads_file=result["path"].name if result.get("path") else "",
+        source=result.get("source", ""),
         found=len(rows),
         builder=builder,
         candidates=[_candidate(row, city) for row in chosen],
@@ -1199,6 +1219,8 @@ def _search_link(name, city, words):
 def contact_links(candidate, found, settings):
     texts = {item["title"].lower(): item["text"] for item in found}
     links = []
+    if candidate.get("demo_url"):
+        links.append(("web", "Public demo", candidate["demo_url"]))
     phone = _phone_parts(candidate.get("phone"))
     digits = phone_digits(phone, candidate.get("country_code"), settings)
     if phone:
@@ -1264,12 +1286,14 @@ def view(run, settings=None):
     settings = settings or lead_search.load_settings()
     opts = options(settings)
     state = run.snapshot()
+    published = publish_site.load_manifest()
     latest = (None, "")
     for candidate in state.get("candidates", []):
         folder = Path(candidate["folder"]) if candidate["folder"] else None
         found = messages(folder) if folder else []
         page = check_site.entry_page(folder) if folder else None
         candidate["messages"] = found
+        candidate["demo_url"] = published.get(candidate["place_id"], {}).get("url", "")
         candidate["site_url"] = _site_url(page, settings) if page else ""
         if candidate["state"] in ("paste", "stopped") and found and page:
             candidate["problems"] = verify_project(folder)

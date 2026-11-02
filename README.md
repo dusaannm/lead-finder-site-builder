@@ -280,6 +280,26 @@ A website that refuses a script, with a 403 or a dropped connection, is not
 called dead. It stays unaudited, because Cloudflare answers that way for sites
 that work fine, and telling an owner their working site is down loses the deal.
 
+## Publishing and the night shift
+
+With `publish.enabled` on and `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`
+in `.env`, finished sites go to one Cloudflare Pages project, each at
+`/business-name-city/`. The upload holds only the site and the photographs it
+uses, never `brief.md` or `outreach.md`. Every page carries `noindex` and a bar
+saying it is a demo and not the official website, and the link replaces
+`[link to the demo site]` in the messages. `scripts/publish_site.py` publishes
+what is waiting.
+
+`scripts/night_shift.py` repeats search, pick, build and publish with a new city
+and trade each time, until `night.hours` or `night.max_sites`. It pauses
+`night.pause_minutes` between searches, waits for the five hour Claude limit at
+`night.pause_at_five_hour`, ends at `night.stop_at_weekly`, and gives up after
+`night.give_up_after_failures` failed searches. It keeps the computer awake.
+Stop it with Ctrl-C, or by creating `data/autopilot/STOP`.
+
+It never sends anything. `http://localhost:5000/ready` lists what is waiting,
+with the demo link, the ways to reach each business and the messages.
+
 ## Adding your details for the outreach messages
 
 The messages say who you are, sign off with your name, and link to websites you

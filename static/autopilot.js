@@ -51,6 +51,10 @@ const parts = {
   searchLimit: document.getElementById("set-search-limit"),
   noWebsite: document.getElementById("set-no-website"),
   phone: document.getElementById("set-phone"),
+  online: document.getElementById("set-online"),
+  rated: document.getElementById("set-rated"),
+  minRating: document.getElementById("set-min-rating"),
+  minReviews: document.getElementById("set-min-reviews"),
   trades: document.getElementById("set-trades"),
   faq: document.getElementById("set-faq"),
   careers: document.getElementById("set-careers"),
@@ -155,7 +159,8 @@ function builderNote(data) {
 }
 
 function senderNote(data) {
-  const name = data.sender_name ? "Messages are signed " + data.sender_name : "No sender name is set, so messages are signed [your name]";
+  const who = data.sender_about ? ", " + data.sender_about : "";
+  const name = data.sender_name ? "Messages are signed " + data.sender_name + who : "No sender name is set, so messages are signed [your name]";
   const links = data.portfolio_links === 1 ? "1 portfolio link" : data.portfolio_links + " portfolio links";
   return name + ", with " + links + ". Both live in config.local.yaml under outreach.";
 }
@@ -167,6 +172,10 @@ function renderSettings(data) {
   parts.searchLimit.value = settings.search_limit;
   parts.noWebsite.checked = settings.only_without_website;
   parts.phone.checked = settings.require_phone;
+  parts.online.checked = settings.require_online_contact;
+  parts.rated.checked = settings.only_rated;
+  parts.minRating.value = settings.min_rating;
+  parts.minReviews.value = settings.min_reviews;
   renderTrades(data);
   parts.faq.checked = settings.site.faq;
   parts.careers.checked = settings.site.careers;
@@ -516,6 +525,10 @@ function settingsPayload() {
     search_limit: parts.searchLimit.value,
     only_without_website: parts.noWebsite.checked,
     require_phone: parts.phone.checked,
+    require_online_contact: parts.online.checked,
+    only_rated: parts.rated.checked,
+    min_rating: parts.minRating.value,
+    min_reviews: parts.minReviews.value,
     trades: [...parts.trades.querySelectorAll("input:checked")].map((box) => box.value),
     site: {
       faq: parts.faq.checked,

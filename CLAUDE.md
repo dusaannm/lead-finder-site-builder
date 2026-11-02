@@ -136,8 +136,10 @@ in English. Do not add co-author trailers.
 ## Boundaries that are deliberate, do not remove them
 
 - The tool never sends a message anywhere and holds no credentials for any
-  messaging account. It only drafts. The autopilot included: a message is
-  logged as sent only when the person presses the button that says so.
+  messaging account. It only drafts. The autopilot and the night shift
+  included: a message is logged as sent only when the person presses the button that says so.
+- Every published demo carries `noindex` and a visible bar saying it is not the
+  official website of the business.
 - Site images come from Pexels or Pixabay, whichever has a key in `.env`, chosen
   by trade from `stock_photos.plans` in `config.yaml`, or from the client.
 - The monthly Google call limit in `config.yaml` stays below the free tier.
