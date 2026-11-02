@@ -373,9 +373,11 @@ Then open `http://localhost:5000`. This runs entirely on your own computer.
 Nothing is published and no one else can reach it. On Windows, `start.bat`
 does both, and closing its window stops the page.
 
-**Build a batch**, on the Autopilot page, keeps searching random cities and
-trades until it has built the number of sites you ask for, and publishes each
-one. It runs on its own, so it goes on after the page is closed.
+**The autopilot** starts from the Overview page. Choose USA, Europe or both and
+press Start. It goes through the cities and trades on its own, builds, publishes
+and writes the messages until you press Stop or it reaches the weekly Claude
+limit in `night.stop_at_weekly`. At the five-hour limit it waits for the reset
+and goes on. It runs as its own process, so it goes on after the page is closed.
 
 On macOS, port 5000 is also where AirPlay Receiver listens. If the page refuses
 to load, or starting it fails with `Address already in use`, turn AirPlay

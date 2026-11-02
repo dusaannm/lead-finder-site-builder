@@ -50,7 +50,7 @@ def usage():
 
 @app.get("/api/overview")
 def overview():
-    return jsonify(dashboard.overview(dashboard.gather(runner=RUNNER), RUNNER))
+    return jsonify(dict(dashboard.overview(dashboard.gather(runner=RUNNER), RUNNER), autopilot=shift_control.status()))
 
 
 @app.get("/api/history")
@@ -218,7 +218,7 @@ def autopilot_check():
 def autopilot_start():
     payload = request.get_json(silent=True) or {}
     if shift_control.status()["running"]:
-        return jsonify({"error": "A batch is going. Stop it, or wait for it to finish."}), 409
+        return jsonify({"error": "The autopilot is on. Stop it first."}), 409
     try:
         state = RUNNER.start(
             city_text=payload.get("city") or "",
@@ -241,7 +241,7 @@ def shift_start():
     if RUNNER.busy():
         return jsonify({"error": "A run is going. Stop it, or wait for it to finish."}), 409
     try:
-        shift_control.start(payload.get("sites"), payload.get("hours"))
+        shift_control.start(payload.get("region"))
     except shift_control.ShiftError as error:
         return jsonify({"error": str(error)}), 400
     return jsonify(shift_control.status())

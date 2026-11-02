@@ -113,8 +113,10 @@ reading files, writing in the output folder and `data/autopilot`, and running
 `scripts/*.py`. Keep `commands/autopilot.md` working inside that list: no other
 shell command, no web access, `scripts/autopilot.py drop-photo` instead of
 deleting files by hand, and `scripts/add_gsap.py` instead of fetching GSAP.
-The Build a batch card on the same page runs `scripts/night_shift.py` through
-`scripts/shift_control.py`, as a process of its own that outlives the browser.
+The Start button on the Overview page runs `scripts/night_shift.py` with no limit
+on sites or hours, through `scripts/shift_control.py`, as a process of its own
+that outlives the browser. It goes through `autopilot.cities` for the chosen
+region until it is stopped or reaches `night.stop_at_weekly`.
 `scripts/check_site.py` is the check it always runs, and
 `scripts/screenshot_site.py` is how it looks at the page with no browser of its
 own. Before the brief it writes a concept and chooses a layout direction from

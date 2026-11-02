@@ -1,10 +1,9 @@
 const VIEW_TITLES = {
-  overview: ["Overview", "Everything that is going on, at a glance."],
-  leads: ["Leads", "Search a trade and a city, then pick who needs a website."],
-  autopilot: ["Autopilot", "A city in, finished sites and drafted messages out."],
-  sites: ["Sites", "Every site you have prepared, built and published."],
-  history: ["History", "Everything you have done, newest first."],
-  settings: ["Settings", "How the autopilot searches, builds and publishes."],
+  overview: ["Overview", "Turn it on and it finds, builds and publishes on its own."],
+  sites: ["Sites", "Open a site, copy the message, send it, mark it."],
+  leads: ["Leads", "Every business found, and a search of your own."],
+  autopilot: ["Activity", "What the autopilot is doing and everything it has done."],
+  settings: ["Settings", "What the autopilot looks for."],
 };
 
 const ICON_PATHS = {
@@ -53,6 +52,7 @@ const ATTENTION_ICONS = {
 };
 
 const ATTENTION_SHOWN = 6;
+const OVERVIEW_POLL_MS = 20000;
 
 const STAGE_LABELS = {
   brief: "Brief ready",
@@ -74,30 +74,21 @@ const SITE_FILTERS = {
   unbuilt: (site) => site.stage === "brief",
 };
 
-const RUN_STATE_LABELS = {
-  searching: "Searching",
-  building: "Building",
-  done: "Finished",
-  failed: "Failed",
-  stopped: "Stopped",
-  interrupted: "Interrupted",
-};
-
 const board = {
   view: "",
   sites: [],
   channels: [],
-  siteFilter: "all",
+  siteFilter: "ready",
   events: [],
   eventFilter: "all",
   open: new Set(),
   watchTimer: null,
   shiftTimer: null,
+  region: "",
 };
 
 const shell = {
   tabs: document.querySelectorAll(".tab"),
-  jumps: document.querySelectorAll("[data-go]"),
   title: document.getElementById("view-title"),
   subtitle: document.getElementById("view-subtitle"),
   kpis: document.getElementById("overview-kpis"),
@@ -105,7 +96,6 @@ const shell = {
   attention: document.getElementById("overview-attention"),
   attentionCount: document.getElementById("attention-count"),
   recent: document.getElementById("overview-recent"),
-  latestRun: document.getElementById("overview-run"),
   navReady: document.getElementById("nav-ready"),
   navRunning: document.getElementById("nav-running"),
   sitesFilter: document.getElementById("sites-filter"),
@@ -115,12 +105,19 @@ const shell = {
   historyFilter: document.getElementById("history-filter"),
   historyList: document.getElementById("history-list"),
   historyEmpty: document.getElementById("history-empty"),
-  shiftForm: document.getElementById("shift-form"),
-  shiftSites: document.getElementById("shift-sites"),
-  shiftHours: document.getElementById("shift-hours"),
-  shiftStart: document.getElementById("shift-start"),
-  shiftStop: document.getElementById("shift-stop"),
-  shiftStatus: document.getElementById("shift-status"),
+  pilot: document.getElementById("pilot"),
+  pilotTitle: document.getElementById("pilot-title"),
+  pilotLine: document.getElementById("pilot-line"),
+  pilotRegion: document.getElementById("pilot-region"),
+  pilotToggle: document.getElementById("pilot-toggle"),
+  pilotCities: document.getElementById("pilot-cities"),
+  pilotBuilt: document.getElementById("pilot-built"),
+  pilotFive: document.getElementById("pilot-five"),
+  pilotFiveBar: document.getElementById("pilot-five-bar"),
+  pilotWeekly: document.getElementById("pilot-weekly"),
+  pilotWeeklyBar: document.getElementById("pilot-weekly-bar"),
+  pilotWeeklyLabel: document.getElementById("pilot-weekly-label"),
+  liveState: document.getElementById("live-state"),
   shiftLog: document.getElementById("shift-log"),
 };
 
@@ -193,9 +190,9 @@ function showView(name) {
   document.title = VIEW_TITLES[chosen][0] + " · Lead Finder";
   if (chosen === "overview") loadOverview();
   if (chosen === "sites") loadSites();
-  if (chosen === "history") loadHistory();
+  if (chosen === "autopilot") loadHistory();
   if (chosen === "autopilot" || chosen === "settings") ensureAutopilot();
-  if (chosen === "autopilot") loadShift();
+  if (chosen === "overview" || chosen === "autopilot") loadPilot();
 }
 
 function goTo(view) {
@@ -224,13 +221,13 @@ async function openRun(runId) {
 
 function updateNav(data) {
   const ready = data.attention.filter((item) => item.kind === "ready").length;
-  const running = Boolean(data.latest_run && data.latest_run.running);
+  const running = data.autopilot.running;
   shell.navReady.textContent = String(ready);
   shell.navReady.hidden = !ready;
   shell.navRunning.hidden = !running;
   clearTimeout(board.watchTimer);
   if (running) {
-    board.watchTimer = setTimeout(() => (board.view === "overview" ? loadOverview() : refreshNav()), POLL_ACTIVE_MS);
+    board.watchTimer = setTimeout(() => (board.view === "overview" ? loadOverview() : refreshNav()), OVERVIEW_POLL_MS);
   }
 }
 
@@ -245,7 +242,6 @@ async function loadOverview() {
     renderPipeline(data.counts);
     renderAttention(data.attention);
     renderEvents(shell.recent, data.recent, true);
-    renderLatestRun(data.latest_run);
     updateNav(data);
   } catch (error) {
     shell.attention.replaceChildren(element("li", "attention-empty", error.message));
@@ -362,31 +358,6 @@ function renderEvents(list, events, withDay) {
     return;
   }
   list.replaceChildren(...events.map((event) => eventEntry(event, withDay)));
-}
-
-function renderLatestRun(run) {
-  if (!run) {
-    const button = element("button", "", "Start the first run");
-    button.type = "button";
-    button.addEventListener("click", () => goTo("autopilot"));
-    shell.latestRun.replaceChildren(
-      element("p", "latest-message", "No run yet. Give it a city and it searches, picks the best businesses, builds their sites and drafts the messages."),
-      button
-    );
-    return;
-  }
-  const state = run.running ? "running" : run.state;
-  const head = element("div", "latest-head");
-  head.append(element("strong", "", run.query), element("span", "run-state state-" + state, run.running ? "Running" : RUN_STATE_LABELS[run.state] || run.state));
-  const meter = element("div", "meter");
-  const fill = element("span", "meter-fill");
-  fill.style.width = run.sites ? (run.built / run.sites) * 100 + "%" : "0";
-  meter.append(fill);
-  const facts = element("p", "latest-facts", run.built + " of " + count(run.sites, "site", "sites") + " built · started " + whenLabel(run.started));
-  const button = element("button", "secondary", "Open this run");
-  button.type = "button";
-  button.addEventListener("click", () => openRun(run.id));
-  shell.latestRun.replaceChildren(head, element("p", "latest-message", run.message || ""), meter, facts, button);
 }
 
 function markFilter(group, chosen, counter) {
@@ -620,65 +591,91 @@ function siteCard(site) {
   return card;
 }
 
-function renderShift(data) {
-  const going = data.running;
-  shell.shiftStart.hidden = going;
-  shell.shiftStop.hidden = !going;
-  shell.shiftStop.disabled = data.stopping;
-  shell.shiftSites.disabled = going;
-  shell.shiftHours.disabled = going;
-  if (!shell.shiftSites.value) shell.shiftSites.value = data.default_sites;
-  if (!shell.shiftHours.value) shell.shiftHours.value = data.default_hours;
-  shell.shiftStatus.classList.remove("error");
-  if (going) {
-    const word = data.stopping ? "Stopping after the sites in progress: " : "Going: ";
-    shell.shiftStatus.textContent = word + data.built + " of " + count(data.sites, "site", "sites") + " built.";
-  } else {
-    shell.shiftStatus.textContent = data.ended ? "Last batch: " + data.built + " of " + count(data.sites, "site", "sites") + " built." : "";
-  }
-  shell.shiftLog.hidden = !data.log.length;
-  shell.shiftLog.textContent = data.log.join("\n");
+function percent(share) {
+  return share === null || share === undefined ? "Not known yet" : Math.round(share * 100) + "%";
+}
+
+function fillBar(bar, share) {
+  bar.style.width = Math.min(100, Math.round((share || 0) * 100)) + "%";
+}
+
+function pilotLine(data) {
+  const sites = count(data.built, "site", "sites");
+  if (data.stopping) return "Stopping the work in progress.";
+  if (data.running) return data.now || "Starting.";
+  if (data.ended === "weekly_limit") return "It stopped on its own at the weekly Claude limit, after " + sites + ".";
+  if (data.ended === "crashed") return "It stopped unexpectedly after " + sites + ". Start it again.";
+  if (data.ended) return "It built " + sites + " in the last run.";
+  return "It searches, builds and publishes until you stop it. Nothing is ever sent.";
+}
+
+function renderRegions(data) {
+  const chosen = board.region || data.region;
+  const buttons = data.regions.map(([value, label]) => {
+    const button = element("button", value === chosen ? "active" : "", label);
+    button.type = "button";
+    button.disabled = data.running;
+    button.addEventListener("click", () => {
+      board.region = value;
+      renderPilot(data);
+    });
+    return button;
+  });
+  shell.pilotRegion.replaceChildren(...buttons);
+  return chosen;
+}
+
+function renderPilot(data) {
+  const chosen = renderRegions(data);
+  const levels = data.levels || {};
+  shell.pilot.classList.toggle("is-on", data.running);
+  shell.pilotTitle.textContent = data.running ? "Autopilot is on" : "Autopilot is off";
+  shell.pilotLine.textContent = pilotLine(data);
+  shell.pilotToggle.textContent = data.stopping ? "Stopping" : data.running ? "Stop" : "Start";
+  shell.pilotToggle.classList.toggle("is-stop", data.running);
+  shell.pilotToggle.disabled = data.stopping;
+  shell.pilotCities.textContent = data.cities[chosen].toLocaleString("en-US");
+  shell.pilotBuilt.textContent = data.built;
+  shell.pilotFive.textContent = percent(levels.five_hour);
+  shell.pilotWeekly.textContent = percent(levels.seven_day);
+  shell.pilotWeeklyLabel.textContent = "Weekly limit, stops at " + percent(data.stop_at_weekly);
+  fillBar(shell.pilotFiveBar, levels.five_hour);
+  fillBar(shell.pilotWeeklyBar, levels.seven_day);
+  shell.liveState.textContent = data.running ? "Autopilot is on" : "Autopilot is off";
+  shell.shiftLog.textContent = data.log.join("\n") || "Nothing has run yet. Start the autopilot on the Overview page.";
+  shell.pilotToggle.onclick = () => togglePilot(data.running, chosen);
   clearTimeout(board.shiftTimer);
-  if (going && board.view === "autopilot") board.shiftTimer = setTimeout(loadShift, POLL_ACTIVE_MS);
-}
-
-async function loadShift() {
-  try {
-    renderShift(await requestJson("/api/shift"));
-  } catch (error) {
-    shell.shiftStatus.textContent = error.message;
-    shell.shiftStatus.classList.add("error");
+  if (data.running && ["overview", "autopilot"].includes(board.view)) {
+    board.shiftTimer = setTimeout(loadPilot, POLL_ACTIVE_MS);
   }
 }
 
-async function postShift(url, body) {
+async function loadPilot() {
   try {
-    const data = await requestJson(url, {
+    renderPilot(await requestJson("/api/shift"));
+  } catch (error) {
+    shell.pilotLine.textContent = error.message;
+  }
+}
+
+async function togglePilot(running, region) {
+  shell.pilotToggle.disabled = true;
+  try {
+    await requestJson(running ? "/api/shift/stop" : "/api/shift/start", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ region }),
     });
-    if (data.log) renderShift(data); else await loadShift();
+    await loadPilot();
+    refreshNav();
   } catch (error) {
-    shell.shiftStatus.textContent = error.message;
-    shell.shiftStatus.classList.add("error");
+    shell.pilotLine.textContent = error.message;
+    shell.pilotToggle.disabled = false;
   }
 }
-
-shell.shiftForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  postShift("/api/shift/start", { sites: shell.shiftSites.value, hours: shell.shiftHours.value });
-});
-shell.shiftStop.addEventListener("click", () => postShift("/api/shift/stop", {}));
 
 shell.tabs.forEach((tab) => {
   tab.addEventListener("click", () => goTo(tab.dataset.view));
-});
-shell.jumps.forEach((button) => {
-  button.addEventListener("click", () => {
-    goTo(button.dataset.go);
-    (button.dataset.go === "leads" ? elements.query : parts.city).focus();
-  });
 });
 shell.sitesFilter.addEventListener("click", (event) => {
   const button = event.target.closest("button");

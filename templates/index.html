@@ -33,23 +33,19 @@
       <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.6"/></svg>
       <span>Overview</span>
     </button>
-    <button type="button" class="tab" data-view="leads">
-      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
-      <span>Leads</span>
-    </button>
-    <button type="button" class="tab" data-view="autopilot">
-      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2.5L4.5 13.5h6.5l-1 8 8.5-11h-6.5z"/></svg>
-      <span>Autopilot</span>
-      <span class="nav-live" id="nav-running" hidden>Live</span>
-    </button>
     <button type="button" class="tab" data-view="sites">
       <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.3 2.4 3.5 5.3 3.5 8.5s-1.2 6.1-3.5 8.5c-2.3-2.4-3.5-5.3-3.5-8.5s1.2-6.1 3.5-8.5z"/></svg>
       <span>Sites</span>
       <span class="nav-count" id="nav-ready" hidden></span>
     </button>
-    <button type="button" class="tab" data-view="history">
+    <button type="button" class="tab" data-view="leads">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
+      <span>Leads</span>
+    </button>
+    <button type="button" class="tab" data-view="autopilot">
       <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
-      <span>History</span>
+      <span>Activity</span>
+      <span class="nav-live" id="nav-running" hidden>Live</span>
     </button>
     <button type="button" class="tab" data-view="settings">
       <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5h9M17 6.5h3M4 12h3M11 12h9M4 17.5h11M19 17.5h1"/><circle cx="15" cy="6.5" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="17.5" r="2"/></svg>
@@ -70,19 +66,45 @@
     <h1 id="view-title">Overview</h1>
     <p id="view-subtitle"></p>
   </div>
-  <div class="topbar-actions">
-    <button type="button" class="secondary" data-go="leads">
-      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
-      New search
-    </button>
-    <button type="button" data-go="autopilot">
-      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2.5L4.5 13.5h6.5l-1 8 8.5-11h-6.5z"/></svg>
-      Start autopilot
-    </button>
-  </div>
 </header>
 
 <div class="view" id="view-overview">
+
+<section class="card pilot" id="pilot">
+  <div class="pilot-top">
+    <div class="pilot-text">
+      <div class="pilot-title">
+        <span class="pilot-dot"></span>
+        <h2 id="pilot-title">Autopilot</h2>
+      </div>
+      <p class="pilot-line" id="pilot-line"></p>
+    </div>
+    <div class="pilot-actions">
+      <div class="segmented" id="pilot-region" role="group" aria-label="Where it searches"></div>
+      <button type="button" id="pilot-toggle" class="pilot-button">Start</button>
+    </div>
+  </div>
+  <div class="pilot-facts">
+    <div class="pilot-fact">
+      <span>Cities to search</span>
+      <strong id="pilot-cities"></strong>
+    </div>
+    <div class="pilot-fact">
+      <span>Sites this run</span>
+      <strong id="pilot-built"></strong>
+    </div>
+    <div class="pilot-fact">
+      <span>Five-hour limit</span>
+      <strong id="pilot-five"></strong>
+      <div class="meter"><span class="meter-fill" id="pilot-five-bar"></span></div>
+    </div>
+    <div class="pilot-fact">
+      <span id="pilot-weekly-label">Weekly limit</span>
+      <strong id="pilot-weekly"></strong>
+      <div class="meter"><span class="meter-fill" id="pilot-weekly-bar"></span></div>
+    </div>
+  </div>
+</section>
 
 <section class="kpis" id="overview-kpis"></section>
 
@@ -104,23 +126,13 @@
   </section>
 </div>
 
-<div class="split">
-  <section class="card">
-    <div class="card-head">
-      <h2>Recent activity</h2>
-      <a class="card-link" href="#history">View all</a>
-    </div>
-    <ol class="timeline" id="overview-recent"></ol>
-  </section>
-
-  <section class="card">
-    <div class="card-head">
-      <h2>Autopilot</h2>
-      <a class="card-link" href="#autopilot">Open</a>
-    </div>
-    <div class="latest-run" id="overview-run"></div>
-  </section>
-</div>
+<section class="card">
+  <div class="card-head">
+    <h2>Recent activity</h2>
+    <a class="card-link" href="#autopilot">View all</a>
+  </div>
+  <ol class="timeline" id="overview-recent"></ol>
+</section>
 
 </div>
 
@@ -194,46 +206,15 @@
 
 <section class="card">
   <div class="card-head">
-    <h2>Start a run</h2>
-    <span class="card-note">Type a city or pick a random one</span>
+    <h2>Right now</h2>
+    <span class="card-note" id="live-state"></span>
   </div>
-  <form id="autopilot-form" class="autopilot-form">
-    <input type="text" id="autopilot-city" list="autopilot-cities" placeholder="A city, such as Chicago" autocomplete="off" spellcheck="false">
-    <button type="button" id="autopilot-random" class="secondary">Random city</button>
-    <input type="text" id="autopilot-trade" list="autopilot-trades" placeholder="Trade, or empty for a random one" autocomplete="off" spellcheck="false">
-    <button type="submit" id="autopilot-start">Start</button>
-  </form>
-  <datalist id="autopilot-cities"></datalist>
-  <datalist id="autopilot-trades"></datalist>
-  <div class="status-line" id="autopilot-status"></div>
-  <p class="hint" id="autopilot-builder"></p>
-</section>
-
-<section class="card">
-  <div class="card-head">
-    <h2>Build a batch</h2>
-    <span class="card-note">Random cities and trades until the number is reached</span>
-  </div>
-  <form id="shift-form" class="shift-form">
-    <label class="control">
-      <span>Sites</span>
-      <input type="number" id="shift-sites" min="1">
-    </label>
-    <label class="control">
-      <span>At most, in hours</span>
-      <input type="number" id="shift-hours" min="0.5" step="0.5">
-    </label>
-    <button type="submit" id="shift-start">Start batch</button>
-    <button type="button" id="shift-stop" class="secondary" hidden>Stop after the sites in progress</button>
-  </form>
-  <div class="status-line" id="shift-status"></div>
-  <pre class="shift-log" id="shift-log" hidden></pre>
-  <p class="hint">Every finished site is published on its own. Nothing is ever sent. You can close this page, the batch keeps going.</p>
+  <pre class="shift-log" id="shift-log"></pre>
 </section>
 
 <section class="card controls run-picker">
   <label class="control">
-    <span>Runs</span>
+    <span>Searches</span>
     <select id="run-select"></select>
   </label>
 </section>
@@ -245,36 +226,9 @@
       <p class="hint" id="run-message"></p>
       <p class="hint" id="run-usage"></p>
     </div>
-    <button type="button" id="run-stop" class="secondary">Stop</button>
   </div>
   <div class="candidates" id="run-candidates"></div>
 </section>
-
-</div>
-
-<div class="view" id="view-sites" hidden>
-
-<section class="card toolbar">
-  <div class="segmented" id="sites-filter" role="group" aria-label="Show">
-    <button type="button" data-filter="all">All <span></span></button>
-    <button type="button" data-filter="ready">Ready to send <span></span></button>
-    <button type="button" data-filter="live">Live <span></span></button>
-    <button type="button" data-filter="contacted">Contacted <span></span></button>
-    <button type="button" data-filter="phone">Phone only <span></span></button>
-    <button type="button" data-filter="unbuilt">Not built <span></span></button>
-  </div>
-  <label class="search-field compact">
-    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
-    <input type="search" id="sites-search" placeholder="Find a business" autocomplete="off" spellcheck="false">
-  </label>
-</section>
-
-<div class="site-grid" id="sites-list"></div>
-<p class="empty card" id="sites-empty" hidden></p>
-
-</div>
-
-<div class="view" id="view-history" hidden>
 
 <section class="card toolbar">
   <div class="segmented" id="history-filter" role="group" aria-label="Show">
@@ -291,6 +245,26 @@
 
 </div>
 
+<div class="view" id="view-sites" hidden>
+
+<section class="card toolbar">
+  <div class="segmented" id="sites-filter" role="group" aria-label="Show">
+    <button type="button" data-filter="ready">Ready to send <span></span></button>
+    <button type="button" data-filter="contacted">Contacted <span></span></button>
+    <button type="button" data-filter="phone">Phone only <span></span></button>
+    <button type="button" data-filter="all">All <span></span></button>
+  </div>
+  <label class="search-field compact">
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
+    <input type="search" id="sites-search" placeholder="Find a business" autocomplete="off" spellcheck="false">
+  </label>
+</section>
+
+<div class="site-grid" id="sites-list"></div>
+<p class="empty card" id="sites-empty" hidden></p>
+
+</div>
+
 <div class="view" id="view-settings" hidden>
 
 <form id="settings-form">
@@ -300,11 +274,7 @@
     </div>
     <div class="field-row">
       <label class="control">
-        <span>Random cities from</span>
-        <select id="set-cities-from"></select>
-      </label>
-      <label class="control">
-        <span>Sites per run</span>
+        <span>Sites per search</span>
         <input type="number" id="set-sites" min="1">
       </label>
       <label class="control">
@@ -338,15 +308,13 @@
         <span>Only businesses with a Google rating</span>
       </label>
     </div>
-    <p class="field-label">Trades a random run picks from</p>
+    <p class="field-label">Trades the autopilot goes through</p>
     <div class="trade-grid" id="set-trades"></div>
   </section>
 
-  <section class="card">
-    <div class="card-head">
-      <h2>How every site is built</h2>
-    </div>
-    <p class="hint">The questions <code>/build-brief</code> asks, answered once for every autopilot site. The manual way on the Leads page still asks them each time.</p>
+  <details class="card advanced">
+  <summary>Advanced: how sites are built</summary>
+  <section>
     <div class="field-row">
       <label class="control checkbox"><input type="checkbox" id="set-faq"><span>FAQ section</span></label>
       <label class="control checkbox"><input type="checkbox" id="set-careers"><span>Careers section</span></label>
@@ -370,10 +338,8 @@
     </div>
   </section>
 
-  <section class="card">
-    <div class="card-head">
-      <h2>Claude Code</h2>
-    </div>
+  <section>
+    <p class="field-label">Claude Code</p>
     <p class="hint" id="builder-state"></p>
     <div class="field-row">
       <label class="control grow">
@@ -405,10 +371,8 @@
     </div>
   </section>
 
-  <section class="card">
-    <div class="card-head">
-      <h2>Publishing</h2>
-    </div>
+  <section>
+    <p class="field-label">Publishing</p>
     <label class="control checkbox">
       <input type="checkbox" id="set-deploy">
       <span>Publish every finished site on Cloudflare Pages and put its address in the messages</span>
@@ -416,12 +380,11 @@
     <p class="hint" id="deploy-state"></p>
   </section>
 
-  <section class="card">
-    <div class="card-head">
-      <h2>Your details</h2>
-    </div>
+  <section>
+    <p class="field-label">Your details</p>
     <p class="hint" id="sender-state"></p>
   </section>
+  </details>
 
   <div class="settings-actions">
     <button type="submit" id="settings-save">Save settings</button>

@@ -13,6 +13,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import autopilot
 import dashboard
 import lead_search
+import night_shift
 import shift_control
 
 SETTINGS = lead_search.load_settings()
@@ -61,8 +62,30 @@ class Publishing(unittest.TestCase):
         publish.assert_called_once()
 
 
-class Batches(unittest.TestCase):
-    def test_the_count_comes_from_the_latest_batch_only(self):
+class Cities(unittest.TestCase):
+    opts = autopilot.options(SETTINGS)
+
+    def test_every_state_and_every_eu_country_is_in_the_list(self):
+        states = {city["state"] for city in autopilot.cities_in("us", self.opts)}
+        countries = {city["country"] for city in autopilot.cities_in("europe", self.opts)}
+        self.assertEqual(len(states), 51)
+        self.assertEqual(len(countries), 28)
+
+    def test_both_regions_together_are_the_whole_list(self):
+        self.assertEqual(
+            len(autopilot.cities_in("both", self.opts)),
+            len(autopilot.cities_in("us", self.opts)) + len(autopilot.cities_in("europe", self.opts)),
+        )
+
+    def test_cities_with_the_same_name_are_searched_apart(self):
+        maine = {"name": "Portland", "state": "Maine"}
+        oregon = {"name": "Portland", "state": "Oregon"}
+        self.assertEqual(autopilot.search_text("barber", maine), "barber Portland Maine")
+        self.assertNotEqual(night_shift.pair_key(maine, "barber"), night_shift.pair_key(oregon, "barber"))
+
+
+class Autopilot(unittest.TestCase):
+    def test_the_count_comes_from_the_latest_run_only(self):
         with tempfile.TemporaryDirectory() as folder:
             log = Path(folder) / "data" / "autopilot" / "night.log"
             log.parent.mkdir(parents=True)
@@ -75,19 +98,46 @@ class Batches(unittest.TestCase):
             self.assertEqual(len(lines), 2)
             self.assertEqual(shift_control.built_so_far(lines), 2)
 
-    def test_a_second_batch_is_refused_while_one_goes(self):
+    def test_the_way_it_ended_is_read_from_the_log(self):
+        self.assertEqual(shift_control.how_it_ended([]), "")
+        self.assertEqual(shift_control.how_it_ended(["Shift starts: a"]), "crashed")
+        self.assertEqual(shift_control.how_it_ended(["The weekly Claude limit reached", "Shift ends: x"]), "weekly_limit")
+        self.assertEqual(shift_control.how_it_ended(["Stop file found.", "Shift ends: x"]), "by_hand")
+
+    def test_a_second_start_is_refused_while_it_is_on(self):
         with tempfile.TemporaryDirectory() as folder:
             record = Path(folder) / "data" / "autopilot" / "shift.json"
             record.parent.mkdir(parents=True)
             record.write_text(json.dumps({"pid": 1}), encoding="utf-8")
             with mock.patch.object(shift_control, "is_alive", return_value=True):
                 with self.assertRaises(shift_control.ShiftError):
-                    shift_control.start(1, 1, SETTINGS, folder)
+                    shift_control.start("us", SETTINGS, folder)
 
-    def test_a_bad_number_is_refused(self):
+    def test_an_unknown_region_is_refused(self):
         with tempfile.TemporaryDirectory() as folder:
             with self.assertRaises(shift_control.ShiftError):
-                shift_control.start("many", 1, SETTINGS, folder)
+                shift_control.start("mars", SETTINGS, folder)
+
+    def test_no_limits_keeps_searching_until_the_stop_file(self):
+        with tempfile.TemporaryDirectory() as folder:
+            settings = json.loads(json.dumps(SETTINGS))
+            settings["night"]["pause_minutes"] = 0
+            searches = []
+
+            def one_search(settings, opts, say, stop_event, rng=None):
+                searches.append(1)
+                if len(searches) == 3:
+                    night_shift.stop_file(folder).touch()
+                    stop_event.set()
+                return mock.Mock(state={"candidates": [], "source": "gosom"})
+
+            stop_path = Path(folder) / "data" / "autopilot" / "STOP"
+            stop_path.parent.mkdir(parents=True)
+            with mock.patch.object(night_shift, "ROOT", Path(folder)), mock.patch.object(
+                night_shift, "_one_search", one_search
+            ), mock.patch.object(night_shift, "_publish", return_value=0), mock.patch.object(night_shift.ready_list, "write"):
+                built, _ = night_shift.shift(0, 0, settings, lambda text: None)
+            self.assertEqual((built, len(searches)), (0, 3))
 
 
 if __name__ == "__main__":

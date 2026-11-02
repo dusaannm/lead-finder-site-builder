@@ -43,10 +43,9 @@ ES_CONTINUOUS = 0x80000000
 ES_SYSTEM_REQUIRED = 0x00000001
 
 REGIONS = {
-    "us": "United States",
-    "english": "English-speaking countries",
+    "us": "USA",
     "europe": "Europe",
-    "world": "Anywhere in the list",
+    "both": "USA and Europe",
 }
 
 STACKS = {
@@ -242,8 +241,6 @@ def cities_in(region, opts):
     every = [dict(city) for city in opts["cities"]]
     if region == "us":
         return [city for city in every if city["country"] == "United States"]
-    if region == "english":
-        return [city for city in every if city["language"] == "English"]
     if region == "europe":
         return [city for city in every if city["region"] == "europe"]
     return every
@@ -504,7 +501,7 @@ def prepare(place_id, city=None, trade="", settings=None, collect=None, on_event
         "postal_address": settings["outreach"]["postal_address"],
         "portfolio_links": settings["outreach"]["portfolio_links"],
         "price": "{}{}".format(
-            settings["outreach"]["pricing"]["currency"],
+            city.get("currency") or settings["outreach"]["pricing"]["currency"],
             pricing.quote(lead, trade, settings["outreach"]["pricing"]),
         ),
         "offer_includes": settings["outreach"]["offer_includes"],
@@ -895,6 +892,10 @@ class Run:
             return json.loads(json.dumps(self.state))
 
 
+def search_text(trade, city):
+    return " ".join(part for part in (trade, city["name"], city.get("state")) if part)
+
+
 def new_run(city, trade, root=None):
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     run_id = stamp
@@ -909,7 +910,7 @@ def new_run(city, trade, root=None):
             "finished": "",
             "city": city,
             "trade": trade,
-            "query": "{} {}".format(trade, city["name"]),
+            "query": search_text(trade, city),
             "state": "searching",
             "message": "",
             "builder": "",

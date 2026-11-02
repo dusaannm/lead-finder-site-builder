@@ -1304,23 +1304,124 @@ td button {
   height: 42px;
 }
 
-.shift-form {
+.pilot {
+  margin-bottom: 18px;
+  padding: 24px;
+}
+
+.pilot-top {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.pilot-text {
+  flex: 1;
+  min-width: 260px;
+}
+
+.pilot-title {
+  display: flex;
+  align-items: center;
   gap: 10px;
 }
 
-.shift-form button {
-  height: 42px;
+.pilot-title h2 {
+  margin: 0;
+  font-size: 22px;
 }
 
-.shift-form input {
-  width: 130px;
+.pilot-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--dim);
+}
+
+.pilot.is-on .pilot-dot {
+  background: #059669;
+  box-shadow: 0 0 0 5px rgba(5, 150, 105, 0.14);
+}
+
+.pilot-line {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.pilot-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.pilot-button {
+  min-width: 170px;
+  height: 46px;
+  justify-content: center;
+  font-size: 15px;
+}
+
+.pilot-button.is-stop {
+  background: var(--red);
+  border-color: var(--red);
+}
+
+.pilot-facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.pilot-fact {
+  display: grid;
+  gap: 5px;
+  align-content: start;
+}
+
+.pilot-fact span:first-child {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.pilot-fact strong {
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.advanced {
+  padding: 18px 20px;
+}
+
+.advanced summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.advanced section {
+  margin-top: 18px;
+}
+
+@media (max-width: 720px) {
+  .pilot-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pilot-actions,
+  .pilot-button {
+    width: 100%;
+  }
 }
 
 .shift-log {
-  margin: 12px 0 0;
+  margin: 0;
   padding: 12px 14px;
   border-radius: 10px;
   background: var(--blue-soft);

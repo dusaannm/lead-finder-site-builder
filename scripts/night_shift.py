@@ -44,7 +44,7 @@ def _remember(key, root=None):
 
 
 def pair_key(city, trade):
-    return lead_store.to_slug("{} {}".format(trade, city["name"]), "search")
+    return lead_store.to_slug(autopilot.search_text(trade, city), "search")
 
 
 def next_pair(opts, tried, rng=None):
@@ -92,8 +92,14 @@ def _pause(seconds, say, root=None):
         if stop_file(root).exists():
             say("Stop file found.")
             return False
-        time.sleep(min(30, max(0, deadline - time.monotonic())))
+        time.sleep(min(autopilot.STOP_POLL_SECONDS, max(0, deadline - time.monotonic())))
     return True
+
+
+def _watch_for_stop(stop_event, root=None):
+    while not stop_event.wait(autopilot.STOP_POLL_SECONDS):
+        if stop_file(root).exists():
+            stop_event.set()
 
 
 def _publish(settings, say):
@@ -107,12 +113,13 @@ def _publish(settings, say):
         return 0
 
 
-def _one_search(settings, opts, say, rng=None):
+def _one_search(settings, opts, say, stop_event, rng=None):
     city, trade = next_pair(opts, load_tried(), rng)
     _remember(pair_key(city, trade))
     run = autopilot.new_run(city, trade)
-    say("Searching {} in {}.".format(trade, city["name"]))
-    autopilot.execute(run, settings, threading.Event(), report=say)
+    place = ", ".join(part for part in (city["name"], city.get("state") or city.get("country")) if part)
+    say("Searching {} in {}.".format(trade, place))
+    autopilot.execute(run, settings, stop_event, report=say)
     return run
 
 
@@ -120,8 +127,12 @@ def shift(hours, most_sites, settings, say, rng=None):
     options = settings["night"]
     settings["autopilot"]["keep_awake"] = False
     opts = autopilot.options(settings)
-    deadline = time.monotonic() + hours * 3600
+    endless = not hours and not most_sites
+    deadline = time.monotonic() + hours * 3600 if hours else float("inf")
+    most_sites = most_sites or float("inf")
     built = published = quiet = 0
+    stop_event = threading.Event()
+    threading.Thread(target=_watch_for_stop, args=(stop_event,), daemon=True).start()
 
     while time.monotonic() < deadline and built < most_sites:
         if stop_file().exists():
@@ -129,7 +140,7 @@ def shift(hours, most_sites, settings, say, rng=None):
             break
         settings["autopilot"]["sites_per_run"] = min(opts["sites_per_run"], most_sites - built)
         try:
-            run = _one_search(settings, opts, say, rng)
+            run = _one_search(settings, opts, say, stop_event, rng)
         except Exception as error:
             say("This search failed: {}".format(error))
             quiet += 1
@@ -150,11 +161,22 @@ def shift(hours, most_sites, settings, say, rng=None):
                 if not _pause(seconds, say):
                     break
 
+        if stop_event.is_set():
+            say("Stop file found.")
+            break
         if quiet >= options["give_up_after_failures"]:
-            say("Google Maps searches kept failing, so the shift stops here.")
-            break
-        if built < most_sites and not _pause(options["pause_minutes"] * 60, say):
-            break
+            if not endless:
+                say("Google Maps searches kept failing, so the shift stops here.")
+                break
+            say("Google Maps searches keep failing, so the next one is in {} minutes.".format(options["blocked_pause_minutes"]))
+            quiet = 0
+            if not _pause(options["blocked_pause_minutes"] * 60, say):
+                break
+            continue
+        if built < most_sites:
+            say("Next search in {} minutes.".format(options["pause_minutes"]))
+            if not _pause(options["pause_minutes"] * 60, say):
+                break
 
     return built, published
 
@@ -167,9 +189,12 @@ def main():
     parser = argparse.ArgumentParser(
         description="Searches, picks, builds and publishes until the time or the site limit. It never sends anything."
     )
-    parser.add_argument("--hours", type=float, default=settings["night"]["hours"])
-    parser.add_argument("--sites", type=int, default=settings["night"]["max_sites"])
+    parser.add_argument("--hours", type=float, default=settings["night"]["hours"], help="0 means no time limit")
+    parser.add_argument("--sites", type=int, default=settings["night"]["max_sites"], help="0 means no limit on sites")
+    parser.add_argument("--region", choices=list(autopilot.REGIONS), help="Where the cities come from")
     arguments = parser.parse_args()
+    if arguments.region:
+        settings["autopilot"]["cities_from"] = arguments.region
 
     log_path = _shift_folder() / "night.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -182,7 +207,9 @@ def main():
             log.write(line + "\n")
 
     awake = autopilot._keep_awake({"keep_awake": True})
-    say("Shift starts: at most {} sites in {} hours.".format(arguments.sites, arguments.hours))
+    say("Shift starts: {} sites, {} hours, cities from {}.".format(
+        arguments.sites or "any number of", arguments.hours or "any number of", settings["autopilot"]["cities_from"]
+    ))
     try:
         built, published = shift(arguments.hours, arguments.sites, settings, say)
     finally:

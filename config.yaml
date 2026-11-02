@@ -82,6 +82,7 @@ night:
   after_reset_seconds: 120
   stop_at_weekly: 0.6
   give_up_after_failures: 3
+  blocked_pause_minutes: 60
 
 lead_quality:
   chain_min_locations: 3
@@ -568,103 +569,256 @@ autopilot:
     parallel: 3
     check_timeout_seconds: 120
   cities:
-    - {name: New York, country: United States, code: us, language: English, region: north_america}
-    - {name: Los Angeles, country: United States, code: us, language: English, region: north_america}
-    - {name: Chicago, country: United States, code: us, language: English, region: north_america}
-    - {name: Houston, country: United States, code: us, language: English, region: north_america}
-    - {name: Phoenix, country: United States, code: us, language: English, region: north_america}
-    - {name: Philadelphia, country: United States, code: us, language: English, region: north_america}
-    - {name: San Antonio, country: United States, code: us, language: English, region: north_america}
-    - {name: San Diego, country: United States, code: us, language: English, region: north_america}
-    - {name: Dallas, country: United States, code: us, language: English, region: north_america}
-    - {name: Austin, country: United States, code: us, language: English, region: north_america}
-    - {name: Jacksonville, country: United States, code: us, language: English, region: north_america}
-    - {name: Columbus, country: United States, code: us, language: English, region: north_america}
-    - {name: Charlotte, country: United States, code: us, language: English, region: north_america}
-    - {name: Indianapolis, country: United States, code: us, language: English, region: north_america}
-    - {name: Seattle, country: United States, code: us, language: English, region: north_america}
-    - {name: Denver, country: United States, code: us, language: English, region: north_america}
-    - {name: Boston, country: United States, code: us, language: English, region: north_america}
-    - {name: Nashville, country: United States, code: us, language: English, region: north_america}
-    - {name: Portland, country: United States, code: us, language: English, region: north_america}
-    - {name: Las Vegas, country: United States, code: us, language: English, region: north_america}
-    - {name: Atlanta, country: United States, code: us, language: English, region: north_america}
-    - {name: Miami, country: United States, code: us, language: English, region: north_america}
-    - {name: Tampa, country: United States, code: us, language: English, region: north_america}
-    - {name: Minneapolis, country: United States, code: us, language: English, region: north_america}
-    - {name: Detroit, country: United States, code: us, language: English, region: north_america}
-    - {name: Baltimore, country: United States, code: us, language: English, region: north_america}
-    - {name: Sacramento, country: United States, code: us, language: English, region: north_america}
-    - {name: Kansas City, country: United States, code: us, language: English, region: north_america}
-    - {name: Cleveland, country: United States, code: us, language: English, region: north_america}
-    - {name: Toronto, country: Canada, code: ca, language: English, region: north_america}
-    - {name: Montreal, country: Canada, code: ca, language: French, region: north_america, aliases: [Montréal]}
-    - {name: Calgary, country: Canada, code: ca, language: English, region: north_america}
-    - {name: Ottawa, country: Canada, code: ca, language: English, region: north_america}
-    - {name: Edmonton, country: Canada, code: ca, language: English, region: north_america}
-    - {name: Mexico City, country: Mexico, code: mx, language: Spanish, region: latin_america, aliases: [Ciudad de México]}
-    - {name: Guadalajara, country: Mexico, code: mx, language: Spanish, region: latin_america}
-    - {name: Monterrey, country: Mexico, code: mx, language: Spanish, region: latin_america}
-    - {name: São Paulo, country: Brazil, code: br, language: Portuguese, region: latin_america}
-    - {name: Rio de Janeiro, country: Brazil, code: br, language: Portuguese, region: latin_america}
-    - {name: Buenos Aires, country: Argentina, code: ar, language: Spanish, region: latin_america}
-    - {name: Bogotá, country: Colombia, code: co, language: Spanish, region: latin_america}
-    - {name: Lima, country: Peru, code: pe, language: Spanish, region: latin_america}
-    - {name: Santiago de Chile, country: Chile, code: cl, area: Santiago, language: Spanish, region: latin_america, aliases: [Santiago]}
-    - {name: London, country: United Kingdom, code: gb, language: English, region: europe}
-    - {name: Birmingham, country: United Kingdom, code: gb, language: English, region: europe}
-    - {name: Manchester, country: United Kingdom, code: gb, language: English, region: europe}
-    - {name: Dublin, country: Ireland, code: ie, language: English, region: europe}
-    - {name: Berlin, country: Germany, code: de, language: German, region: europe}
-    - {name: Hamburg, country: Germany, code: de, language: German, region: europe}
-    - {name: Munich, country: Germany, code: de, language: German, region: europe, aliases: [München]}
-    - {name: Cologne, country: Germany, code: de, language: German, region: europe, aliases: [Köln]}
-    - {name: Vienna, country: Austria, code: at, language: German, region: europe, aliases: [Wien]}
-    - {name: Zurich, country: Switzerland, code: ch, language: German, region: europe, aliases: [Zürich]}
-    - {name: Paris, country: France, code: fr, language: French, region: europe}
-    - {name: Lyon, country: France, code: fr, language: French, region: europe}
-    - {name: Marseille, country: France, code: fr, language: French, region: europe}
-    - {name: Brussels, country: Belgium, code: be, language: French, region: europe, aliases: [Bruxelles, Brussel]}
-    - {name: Amsterdam, country: Netherlands, code: nl, language: Dutch, region: europe}
-    - {name: Madrid, country: Spain, code: es, language: Spanish, region: europe}
-    - {name: Barcelona, country: Spain, code: es, language: Spanish, region: europe}
-    - {name: Valencia, country: Spain, code: es, language: Spanish, region: europe}
-    - {name: Seville, country: Spain, code: es, language: Spanish, region: europe, aliases: [Sevilla]}
-    - {name: Lisbon, country: Portugal, code: pt, language: Portuguese, region: europe, aliases: [Lisboa]}
-    - {name: Porto, country: Portugal, code: pt, language: Portuguese, region: europe}
-    - {name: Rome, country: Italy, code: it, language: Italian, region: europe, aliases: [Roma]}
-    - {name: Milan, country: Italy, code: it, language: Italian, region: europe, aliases: [Milano]}
-    - {name: Naples, country: Italy, code: it, language: Italian, region: europe, aliases: [Napoli]}
-    - {name: Turin, country: Italy, code: it, language: Italian, region: europe, aliases: [Torino]}
-    - {name: Warsaw, country: Poland, code: pl, language: Polish, region: europe, aliases: [Warszawa]}
-    - {name: Prague, country: Czechia, code: cz, language: Czech, region: europe, aliases: [Praha]}
-    - {name: Budapest, country: Hungary, code: hu, language: Hungarian, region: europe}
-    - {name: Bucharest, country: Romania, code: ro, language: Romanian, region: europe, aliases: [București]}
-    - {name: Sofia, country: Bulgaria, code: bg, language: Bulgarian, region: europe, aliases: [София]}
-    - {name: Belgrade, country: Serbia, code: rs, language: Serbian, region: europe, aliases: [Beograd, Београд]}
-    - {name: Zagreb, country: Croatia, code: hr, language: Croatian, region: europe}
-    - {name: Athens, country: Greece, code: gr, area: Municipality of Athens, language: Greek, region: europe, aliases: [Athína, Αθήνα]}
-    - {name: Istanbul, country: Turkey, code: tr, language: Turkish, region: europe, aliases: [İstanbul]}
-    - {name: Stockholm, country: Sweden, code: se, language: Swedish, region: europe}
-    - {name: Copenhagen, country: Denmark, code: dk, area: Københavns Kommune, language: Danish, region: europe, aliases: [København]}
-    - {name: Helsinki, country: Finland, code: fi, language: Finnish, region: europe}
-    - {name: Oslo, country: Norway, code: "no", language: Norwegian, region: europe}
-    - {name: Sydney, country: Australia, code: au, language: English, region: oceania}
-    - {name: Melbourne, country: Australia, code: au, language: English, region: oceania}
-    - {name: Brisbane, country: Australia, code: au, language: English, region: oceania}
-    - {name: Perth, country: Australia, code: au, language: English, region: oceania}
-    - {name: Adelaide, country: Australia, code: au, language: English, region: oceania}
-    - {name: Auckland, country: New Zealand, code: nz, language: English, region: oceania}
-    - {name: Singapore, country: Singapore, code: sg, language: English, region: asia}
-    - {name: Tokyo, country: Japan, code: jp, language: Japanese, region: asia}
-    - {name: Osaka, country: Japan, code: jp, language: Japanese, region: asia}
-    - {name: Seoul, country: South Korea, code: kr, language: Korean, region: asia}
-    - {name: Mumbai, country: India, code: in, area: Mumbai Suburban, language: English, region: asia}
-    - {name: Bangalore, country: India, code: in, language: English, region: asia, aliases: [Bengaluru]}
-    - {name: Dubai, country: United Arab Emirates, code: ae, language: English, region: middle_east}
-    - {name: Johannesburg, country: South Africa, code: za, area: City of Johannesburg Metropolitan Municipality, language: English, region: africa}
-    - {name: Cape Town, country: South Africa, code: za, area: City of Cape Town, language: English, region: africa}
-    - {name: Nairobi, country: Kenya, code: ke, language: English, region: africa}
+    - {name: Huntsville, state: Alabama, country: United States, code: us, language: English, region: north_america}
+    - {name: Birmingham, state: Alabama, country: United States, code: us, language: English, region: north_america}
+    - {name: Montgomery, state: Alabama, country: United States, code: us, language: English, region: north_america}
+    - {name: Anchorage, state: Alaska, country: United States, code: us, language: English, region: north_america}
+    - {name: Fairbanks, state: Alaska, country: United States, code: us, language: English, region: north_america}
+    - {name: Juneau, state: Alaska, country: United States, code: us, language: English, region: north_america}
+    - {name: Phoenix, state: Arizona, country: United States, code: us, language: English, region: north_america}
+    - {name: Tucson, state: Arizona, country: United States, code: us, language: English, region: north_america}
+    - {name: Mesa, state: Arizona, country: United States, code: us, language: English, region: north_america}
+    - {name: Scottsdale, state: Arizona, country: United States, code: us, language: English, region: north_america}
+    - {name: Little Rock, state: Arkansas, country: United States, code: us, language: English, region: north_america}
+    - {name: Fayetteville, state: Arkansas, country: United States, code: us, language: English, region: north_america}
+    - {name: Fort Smith, state: Arkansas, country: United States, code: us, language: English, region: north_america}
+    - {name: Los Angeles, state: California, country: United States, code: us, language: English, region: north_america}
+    - {name: San Diego, state: California, country: United States, code: us, language: English, region: north_america}
+    - {name: San Jose, state: California, country: United States, code: us, language: English, region: north_america}
+    - {name: San Francisco, state: California, country: United States, code: us, language: English, region: north_america}
+    - {name: Fresno, state: California, country: United States, code: us, language: English, region: north_america}
+    - {name: Sacramento, state: California, country: United States, code: us, language: English, region: north_america}
+    - {name: Denver, state: Colorado, country: United States, code: us, language: English, region: north_america}
+    - {name: Colorado Springs, state: Colorado, country: United States, code: us, language: English, region: north_america}
+    - {name: Aurora, state: Colorado, country: United States, code: us, language: English, region: north_america}
+    - {name: Bridgeport, state: Connecticut, country: United States, code: us, language: English, region: north_america}
+    - {name: Stamford, state: Connecticut, country: United States, code: us, language: English, region: north_america}
+    - {name: New Haven, state: Connecticut, country: United States, code: us, language: English, region: north_america}
+    - {name: Wilmington, state: Delaware, country: United States, code: us, language: English, region: north_america}
+    - {name: Dover, state: Delaware, country: United States, code: us, language: English, region: north_america}
+    - {name: Newark, state: Delaware, country: United States, code: us, language: English, region: north_america}
+    - {name: Washington, state: District of Columbia, country: United States, code: us, language: English, region: north_america}
+    - {name: Jacksonville, state: Florida, country: United States, code: us, language: English, region: north_america}
+    - {name: Miami, state: Florida, country: United States, code: us, language: English, region: north_america}
+    - {name: Tampa, state: Florida, country: United States, code: us, language: English, region: north_america}
+    - {name: Orlando, state: Florida, country: United States, code: us, language: English, region: north_america}
+    - {name: St. Petersburg, state: Florida, country: United States, code: us, language: English, region: north_america}
+    - {name: Atlanta, state: Georgia, country: United States, code: us, language: English, region: north_america}
+    - {name: Augusta, state: Georgia, country: United States, code: us, language: English, region: north_america}
+    - {name: Savannah, state: Georgia, country: United States, code: us, language: English, region: north_america}
+    - {name: Honolulu, state: Hawaii, country: United States, code: us, language: English, region: north_america}
+    - {name: Hilo, state: Hawaii, country: United States, code: us, language: English, region: north_america}
+    - {name: Kailua, state: Hawaii, country: United States, code: us, language: English, region: north_america}
+    - {name: Boise, state: Idaho, country: United States, code: us, language: English, region: north_america}
+    - {name: Meridian, state: Idaho, country: United States, code: us, language: English, region: north_america}
+    - {name: Nampa, state: Idaho, country: United States, code: us, language: English, region: north_america}
+    - {name: Chicago, state: Illinois, country: United States, code: us, language: English, region: north_america}
+    - {name: Aurora, state: Illinois, country: United States, code: us, language: English, region: north_america}
+    - {name: Naperville, state: Illinois, country: United States, code: us, language: English, region: north_america}
+    - {name: Indianapolis, state: Indiana, country: United States, code: us, language: English, region: north_america}
+    - {name: Fort Wayne, state: Indiana, country: United States, code: us, language: English, region: north_america}
+    - {name: Evansville, state: Indiana, country: United States, code: us, language: English, region: north_america}
+    - {name: Des Moines, state: Iowa, country: United States, code: us, language: English, region: north_america}
+    - {name: Cedar Rapids, state: Iowa, country: United States, code: us, language: English, region: north_america}
+    - {name: Davenport, state: Iowa, country: United States, code: us, language: English, region: north_america}
+    - {name: Wichita, state: Kansas, country: United States, code: us, language: English, region: north_america}
+    - {name: Overland Park, state: Kansas, country: United States, code: us, language: English, region: north_america}
+    - {name: Kansas City, state: Kansas, country: United States, code: us, language: English, region: north_america}
+    - {name: Louisville, state: Kentucky, country: United States, code: us, language: English, region: north_america}
+    - {name: Lexington, state: Kentucky, country: United States, code: us, language: English, region: north_america}
+    - {name: Bowling Green, state: Kentucky, country: United States, code: us, language: English, region: north_america}
+    - {name: New Orleans, state: Louisiana, country: United States, code: us, language: English, region: north_america}
+    - {name: Baton Rouge, state: Louisiana, country: United States, code: us, language: English, region: north_america}
+    - {name: Shreveport, state: Louisiana, country: United States, code: us, language: English, region: north_america}
+    - {name: Portland, state: Maine, country: United States, code: us, language: English, region: north_america}
+    - {name: Lewiston, state: Maine, country: United States, code: us, language: English, region: north_america}
+    - {name: Bangor, state: Maine, country: United States, code: us, language: English, region: north_america}
+    - {name: Baltimore, state: Maryland, country: United States, code: us, language: English, region: north_america}
+    - {name: Frederick, state: Maryland, country: United States, code: us, language: English, region: north_america}
+    - {name: Rockville, state: Maryland, country: United States, code: us, language: English, region: north_america}
+    - {name: Boston, state: Massachusetts, country: United States, code: us, language: English, region: north_america}
+    - {name: Worcester, state: Massachusetts, country: United States, code: us, language: English, region: north_america}
+    - {name: Springfield, state: Massachusetts, country: United States, code: us, language: English, region: north_america}
+    - {name: Detroit, state: Michigan, country: United States, code: us, language: English, region: north_america}
+    - {name: Grand Rapids, state: Michigan, country: United States, code: us, language: English, region: north_america}
+    - {name: Warren, state: Michigan, country: United States, code: us, language: English, region: north_america}
+    - {name: Minneapolis, state: Minnesota, country: United States, code: us, language: English, region: north_america}
+    - {name: Saint Paul, state: Minnesota, country: United States, code: us, language: English, region: north_america}
+    - {name: Rochester, state: Minnesota, country: United States, code: us, language: English, region: north_america}
+    - {name: Jackson, state: Mississippi, country: United States, code: us, language: English, region: north_america}
+    - {name: Gulfport, state: Mississippi, country: United States, code: us, language: English, region: north_america}
+    - {name: Southaven, state: Mississippi, country: United States, code: us, language: English, region: north_america}
+    - {name: Kansas City, state: Missouri, country: United States, code: us, language: English, region: north_america}
+    - {name: St. Louis, state: Missouri, country: United States, code: us, language: English, region: north_america}
+    - {name: Springfield, state: Missouri, country: United States, code: us, language: English, region: north_america}
+    - {name: Billings, state: Montana, country: United States, code: us, language: English, region: north_america}
+    - {name: Missoula, state: Montana, country: United States, code: us, language: English, region: north_america}
+    - {name: Great Falls, state: Montana, country: United States, code: us, language: English, region: north_america}
+    - {name: Omaha, state: Nebraska, country: United States, code: us, language: English, region: north_america}
+    - {name: Lincoln, state: Nebraska, country: United States, code: us, language: English, region: north_america}
+    - {name: Bellevue, state: Nebraska, country: United States, code: us, language: English, region: north_america}
+    - {name: Las Vegas, state: Nevada, country: United States, code: us, language: English, region: north_america}
+    - {name: Henderson, state: Nevada, country: United States, code: us, language: English, region: north_america}
+    - {name: Reno, state: Nevada, country: United States, code: us, language: English, region: north_america}
+    - {name: Manchester, state: New Hampshire, country: United States, code: us, language: English, region: north_america}
+    - {name: Nashua, state: New Hampshire, country: United States, code: us, language: English, region: north_america}
+    - {name: Concord, state: New Hampshire, country: United States, code: us, language: English, region: north_america}
+    - {name: Newark, state: New Jersey, country: United States, code: us, language: English, region: north_america}
+    - {name: Jersey City, state: New Jersey, country: United States, code: us, language: English, region: north_america}
+    - {name: Paterson, state: New Jersey, country: United States, code: us, language: English, region: north_america}
+    - {name: Albuquerque, state: New Mexico, country: United States, code: us, language: English, region: north_america}
+    - {name: Las Cruces, state: New Mexico, country: United States, code: us, language: English, region: north_america}
+    - {name: Santa Fe, state: New Mexico, country: United States, code: us, language: English, region: north_america}
+    - {name: New York, state: New York, country: United States, code: us, language: English, region: north_america}
+    - {name: Buffalo, state: New York, country: United States, code: us, language: English, region: north_america}
+    - {name: Rochester, state: New York, country: United States, code: us, language: English, region: north_america}
+    - {name: Albany, state: New York, country: United States, code: us, language: English, region: north_america}
+    - {name: Charlotte, state: North Carolina, country: United States, code: us, language: English, region: north_america}
+    - {name: Raleigh, state: North Carolina, country: United States, code: us, language: English, region: north_america}
+    - {name: Greensboro, state: North Carolina, country: United States, code: us, language: English, region: north_america}
+    - {name: Fargo, state: North Dakota, country: United States, code: us, language: English, region: north_america}
+    - {name: Bismarck, state: North Dakota, country: United States, code: us, language: English, region: north_america}
+    - {name: Grand Forks, state: North Dakota, country: United States, code: us, language: English, region: north_america}
+    - {name: Columbus, state: Ohio, country: United States, code: us, language: English, region: north_america}
+    - {name: Cleveland, state: Ohio, country: United States, code: us, language: English, region: north_america}
+    - {name: Cincinnati, state: Ohio, country: United States, code: us, language: English, region: north_america}
+    - {name: Oklahoma City, state: Oklahoma, country: United States, code: us, language: English, region: north_america}
+    - {name: Tulsa, state: Oklahoma, country: United States, code: us, language: English, region: north_america}
+    - {name: Norman, state: Oklahoma, country: United States, code: us, language: English, region: north_america}
+    - {name: Portland, state: Oregon, country: United States, code: us, language: English, region: north_america}
+    - {name: Salem, state: Oregon, country: United States, code: us, language: English, region: north_america}
+    - {name: Eugene, state: Oregon, country: United States, code: us, language: English, region: north_america}
+    - {name: Philadelphia, state: Pennsylvania, country: United States, code: us, language: English, region: north_america}
+    - {name: Pittsburgh, state: Pennsylvania, country: United States, code: us, language: English, region: north_america}
+    - {name: Allentown, state: Pennsylvania, country: United States, code: us, language: English, region: north_america}
+    - {name: Providence, state: Rhode Island, country: United States, code: us, language: English, region: north_america}
+    - {name: Warwick, state: Rhode Island, country: United States, code: us, language: English, region: north_america}
+    - {name: Cranston, state: Rhode Island, country: United States, code: us, language: English, region: north_america}
+    - {name: Charleston, state: South Carolina, country: United States, code: us, language: English, region: north_america}
+    - {name: Columbia, state: South Carolina, country: United States, code: us, language: English, region: north_america}
+    - {name: Greenville, state: South Carolina, country: United States, code: us, language: English, region: north_america}
+    - {name: Sioux Falls, state: South Dakota, country: United States, code: us, language: English, region: north_america}
+    - {name: Rapid City, state: South Dakota, country: United States, code: us, language: English, region: north_america}
+    - {name: Aberdeen, state: South Dakota, country: United States, code: us, language: English, region: north_america}
+    - {name: Nashville, state: Tennessee, country: United States, code: us, language: English, region: north_america}
+    - {name: Memphis, state: Tennessee, country: United States, code: us, language: English, region: north_america}
+    - {name: Knoxville, state: Tennessee, country: United States, code: us, language: English, region: north_america}
+    - {name: Houston, state: Texas, country: United States, code: us, language: English, region: north_america}
+    - {name: San Antonio, state: Texas, country: United States, code: us, language: English, region: north_america}
+    - {name: Dallas, state: Texas, country: United States, code: us, language: English, region: north_america}
+    - {name: Austin, state: Texas, country: United States, code: us, language: English, region: north_america}
+    - {name: Fort Worth, state: Texas, country: United States, code: us, language: English, region: north_america}
+    - {name: El Paso, state: Texas, country: United States, code: us, language: English, region: north_america}
+    - {name: Salt Lake City, state: Utah, country: United States, code: us, language: English, region: north_america}
+    - {name: West Valley City, state: Utah, country: United States, code: us, language: English, region: north_america}
+    - {name: Provo, state: Utah, country: United States, code: us, language: English, region: north_america}
+    - {name: Burlington, state: Vermont, country: United States, code: us, language: English, region: north_america}
+    - {name: South Burlington, state: Vermont, country: United States, code: us, language: English, region: north_america}
+    - {name: Rutland, state: Vermont, country: United States, code: us, language: English, region: north_america}
+    - {name: Virginia Beach, state: Virginia, country: United States, code: us, language: English, region: north_america}
+    - {name: Norfolk, state: Virginia, country: United States, code: us, language: English, region: north_america}
+    - {name: Richmond, state: Virginia, country: United States, code: us, language: English, region: north_america}
+    - {name: Seattle, state: Washington, country: United States, code: us, language: English, region: north_america}
+    - {name: Spokane, state: Washington, country: United States, code: us, language: English, region: north_america}
+    - {name: Tacoma, state: Washington, country: United States, code: us, language: English, region: north_america}
+    - {name: Charleston, state: West Virginia, country: United States, code: us, language: English, region: north_america}
+    - {name: Huntington, state: West Virginia, country: United States, code: us, language: English, region: north_america}
+    - {name: Morgantown, state: West Virginia, country: United States, code: us, language: English, region: north_america}
+    - {name: Milwaukee, state: Wisconsin, country: United States, code: us, language: English, region: north_america}
+    - {name: Madison, state: Wisconsin, country: United States, code: us, language: English, region: north_america}
+    - {name: Green Bay, state: Wisconsin, country: United States, code: us, language: English, region: north_america}
+    - {name: Cheyenne, state: Wyoming, country: United States, code: us, language: English, region: north_america}
+    - {name: Casper, state: Wyoming, country: United States, code: us, language: English, region: north_america}
+    - {name: Laramie, state: Wyoming, country: United States, code: us, language: English, region: north_america}
+    - {name: Vienna, country: Austria, code: at, language: German, currency: "€", region: europe}
+    - {name: Graz, country: Austria, code: at, language: German, currency: "€", region: europe}
+    - {name: Linz, country: Austria, code: at, language: German, currency: "€", region: europe}
+    - {name: Brussels, country: Belgium, code: be, language: French, currency: "€", region: europe}
+    - {name: Liege, country: Belgium, code: be, language: French, currency: "€", region: europe}
+    - {name: Antwerp, country: Belgium, code: be, language: Dutch, currency: "€", region: europe}
+    - {name: Ghent, country: Belgium, code: be, language: Dutch, currency: "€", region: europe}
+    - {name: Sofia, country: Bulgaria, code: bg, language: Bulgarian, currency: "€", region: europe}
+    - {name: Plovdiv, country: Bulgaria, code: bg, language: Bulgarian, currency: "€", region: europe}
+    - {name: Varna, country: Bulgaria, code: bg, language: Bulgarian, currency: "€", region: europe}
+    - {name: Zagreb, country: Croatia, code: hr, language: Croatian, currency: "€", region: europe}
+    - {name: Split, country: Croatia, code: hr, language: Croatian, currency: "€", region: europe}
+    - {name: Rijeka, country: Croatia, code: hr, language: Croatian, currency: "€", region: europe}
+    - {name: Nicosia, country: Cyprus, code: cy, language: Greek, currency: "€", region: europe}
+    - {name: Limassol, country: Cyprus, code: cy, language: Greek, currency: "€", region: europe}
+    - {name: Prague, country: Czechia, code: cz, language: Czech, currency: "€", region: europe}
+    - {name: Brno, country: Czechia, code: cz, language: Czech, currency: "€", region: europe}
+    - {name: Ostrava, country: Czechia, code: cz, language: Czech, currency: "€", region: europe}
+    - {name: Copenhagen, country: Denmark, code: dk, language: Danish, currency: "€", region: europe}
+    - {name: Aarhus, country: Denmark, code: dk, language: Danish, currency: "€", region: europe}
+    - {name: Odense, country: Denmark, code: dk, language: Danish, currency: "€", region: europe}
+    - {name: Tallinn, country: Estonia, code: ee, language: Estonian, currency: "€", region: europe}
+    - {name: Tartu, country: Estonia, code: ee, language: Estonian, currency: "€", region: europe}
+    - {name: Helsinki, country: Finland, code: fi, language: Finnish, currency: "€", region: europe}
+    - {name: Tampere, country: Finland, code: fi, language: Finnish, currency: "€", region: europe}
+    - {name: Turku, country: Finland, code: fi, language: Finnish, currency: "€", region: europe}
+    - {name: Paris, country: France, code: fr, language: French, currency: "€", region: europe}
+    - {name: Marseille, country: France, code: fr, language: French, currency: "€", region: europe}
+    - {name: Lyon, country: France, code: fr, language: French, currency: "€", region: europe}
+    - {name: Toulouse, country: France, code: fr, language: French, currency: "€", region: europe}
+    - {name: Nice, country: France, code: fr, language: French, currency: "€", region: europe}
+    - {name: Berlin, country: Germany, code: de, language: German, currency: "€", region: europe}
+    - {name: Hamburg, country: Germany, code: de, language: German, currency: "€", region: europe}
+    - {name: Munich, country: Germany, code: de, language: German, currency: "€", region: europe}
+    - {name: Cologne, country: Germany, code: de, language: German, currency: "€", region: europe}
+    - {name: Frankfurt, country: Germany, code: de, language: German, currency: "€", region: europe}
+    - {name: Athens, country: Greece, code: gr, language: Greek, currency: "€", region: europe}
+    - {name: Thessaloniki, country: Greece, code: gr, language: Greek, currency: "€", region: europe}
+    - {name: Patras, country: Greece, code: gr, language: Greek, currency: "€", region: europe}
+    - {name: Budapest, country: Hungary, code: hu, language: Hungarian, currency: "€", region: europe}
+    - {name: Debrecen, country: Hungary, code: hu, language: Hungarian, currency: "€", region: europe}
+    - {name: Szeged, country: Hungary, code: hu, language: Hungarian, currency: "€", region: europe}
+    - {name: Dublin, country: Ireland, code: ie, language: English, currency: "€", region: europe}
+    - {name: Cork, country: Ireland, code: ie, language: English, currency: "€", region: europe}
+    - {name: Galway, country: Ireland, code: ie, language: English, currency: "€", region: europe}
+    - {name: Rome, country: Italy, code: it, language: Italian, currency: "€", region: europe}
+    - {name: Milan, country: Italy, code: it, language: Italian, currency: "€", region: europe}
+    - {name: Naples, country: Italy, code: it, language: Italian, currency: "€", region: europe}
+    - {name: Turin, country: Italy, code: it, language: Italian, currency: "€", region: europe}
+    - {name: Riga, country: Latvia, code: lv, language: Latvian, currency: "€", region: europe}
+    - {name: Daugavpils, country: Latvia, code: lv, language: Latvian, currency: "€", region: europe}
+    - {name: Vilnius, country: Lithuania, code: lt, language: Lithuanian, currency: "€", region: europe}
+    - {name: Kaunas, country: Lithuania, code: lt, language: Lithuanian, currency: "€", region: europe}
+    - {name: Klaipeda, country: Lithuania, code: lt, language: Lithuanian, currency: "€", region: europe}
+    - {name: Luxembourg, country: Luxembourg, code: lu, language: French, currency: "€", region: europe}
+    - {name: Valletta, country: Malta, code: mt, language: English, currency: "€", region: europe}
+    - {name: Sliema, country: Malta, code: mt, language: English, currency: "€", region: europe}
+    - {name: Amsterdam, country: Netherlands, code: nl, language: Dutch, currency: "€", region: europe}
+    - {name: Rotterdam, country: Netherlands, code: nl, language: Dutch, currency: "€", region: europe}
+    - {name: The Hague, country: Netherlands, code: nl, language: Dutch, currency: "€", region: europe}
+    - {name: Warsaw, country: Poland, code: pl, language: Polish, currency: "€", region: europe}
+    - {name: Krakow, country: Poland, code: pl, language: Polish, currency: "€", region: europe}
+    - {name: Wroclaw, country: Poland, code: pl, language: Polish, currency: "€", region: europe}
+    - {name: Gdansk, country: Poland, code: pl, language: Polish, currency: "€", region: europe}
+    - {name: Lisbon, country: Portugal, code: pt, language: Portuguese, currency: "€", region: europe}
+    - {name: Porto, country: Portugal, code: pt, language: Portuguese, currency: "€", region: europe}
+    - {name: Braga, country: Portugal, code: pt, language: Portuguese, currency: "€", region: europe}
+    - {name: Bucharest, country: Romania, code: ro, language: Romanian, currency: "€", region: europe}
+    - {name: Cluj-Napoca, country: Romania, code: ro, language: Romanian, currency: "€", region: europe}
+    - {name: Timisoara, country: Romania, code: ro, language: Romanian, currency: "€", region: europe}
+    - {name: Bratislava, country: Slovakia, code: sk, language: Slovak, currency: "€", region: europe}
+    - {name: Kosice, country: Slovakia, code: sk, language: Slovak, currency: "€", region: europe}
+    - {name: Ljubljana, country: Slovenia, code: si, language: Slovenian, currency: "€", region: europe}
+    - {name: Maribor, country: Slovenia, code: si, language: Slovenian, currency: "€", region: europe}
+    - {name: Madrid, country: Spain, code: es, language: Spanish, currency: "€", region: europe}
+    - {name: Barcelona, country: Spain, code: es, language: Spanish, currency: "€", region: europe}
+    - {name: Valencia, country: Spain, code: es, language: Spanish, currency: "€", region: europe}
+    - {name: Seville, country: Spain, code: es, language: Spanish, currency: "€", region: europe}
+    - {name: Stockholm, country: Sweden, code: se, language: Swedish, currency: "€", region: europe}
+    - {name: Gothenburg, country: Sweden, code: se, language: Swedish, currency: "€", region: europe}
+    - {name: Malmo, country: Sweden, code: se, language: Swedish, currency: "€", region: europe}
+    - {name: London, country: United Kingdom, code: gb, language: English, currency: "£", region: europe}
+    - {name: Birmingham, country: United Kingdom, code: gb, language: English, currency: "£", region: europe}
+    - {name: Manchester, country: United Kingdom, code: gb, language: English, currency: "£", region: europe}
+    - {name: Glasgow, country: United Kingdom, code: gb, language: English, currency: "£", region: europe}
+    - {name: Leeds, country: United Kingdom, code: gb, language: English, currency: "£", region: europe}
+    - {name: Edinburgh, country: United Kingdom, code: gb, language: English, currency: "£", region: europe}
+    - {name: Liverpool, country: United Kingdom, code: gb, language: English, currency: "£", region: europe}
+    - {name: Bristol, country: United Kingdom, code: gb, language: English, currency: "£", region: europe}
 
 contact_links:
   keep_leading_zero: [it]

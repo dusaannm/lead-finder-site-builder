@@ -7,7 +7,7 @@ const CANDIDATE_TEXT = {
   photos: "Downloading stock photographs.",
   building: "Claude Code is writing the brief, the site and the messages.",
   paste: "Photographs are ready. Paste this into Claude Code: it builds the site and writes the messages without asking anything, and this page shows them once it is done.",
-  done: "Built and checked. Read the messages, send one, then mark it here.",
+  done: "Built and checked. Its messages are on the Sites page.",
   attention: "Built, with problems to look at before sending anything:",
   failed: "Could not be prepared:",
   stopped: "Stopped before it was built.",
@@ -28,24 +28,13 @@ const autopilot = {
 };
 
 const parts = {
-  form: document.getElementById("autopilot-form"),
-  city: document.getElementById("autopilot-city"),
-  random: document.getElementById("autopilot-random"),
-  trade: document.getElementById("autopilot-trade"),
-  start: document.getElementById("autopilot-start"),
-  cityList: document.getElementById("autopilot-cities"),
-  tradeList: document.getElementById("autopilot-trades"),
-  status: document.getElementById("autopilot-status"),
-  builderNote: document.getElementById("autopilot-builder"),
   runPanel: document.getElementById("run-panel"),
   runTitle: document.getElementById("run-title"),
   runMessage: document.getElementById("run-message"),
   runUsage: document.getElementById("run-usage"),
-  runStop: document.getElementById("run-stop"),
   runCandidates: document.getElementById("run-candidates"),
   runSelect: document.getElementById("run-select"),
   settingsForm: document.getElementById("settings-form"),
-  citiesFrom: document.getElementById("set-cities-from"),
   sites: document.getElementById("set-sites"),
   searchLimit: document.getElementById("set-search-limit"),
   noWebsite: document.getElementById("set-no-website"),
@@ -139,13 +128,6 @@ function renderTrades(data) {
   });
 }
 
-function builderNote(data) {
-  if (data.builder) {
-    return "Sites are built by Claude Code at " + data.builder + ". If a run stops at the photographs, check it on the Settings page.";
-  }
-  return "No Claude Code was found, so each run stops after the photographs and gives you one command per business to paste into Claude Code.";
-}
-
 function senderNote(data) {
   const who = data.sender_about ? ", " + data.sender_about : "";
   const name = data.sender_name ? "Messages are signed " + data.sender_name + who : "No sender name is set, so messages are signed [your name]";
@@ -155,7 +137,6 @@ function senderNote(data) {
 
 function renderSettings(data) {
   const settings = data.settings;
-  fillOptions(parts.citiesFrom, data.regions, settings.cities_from);
   parts.sites.value = settings.sites_per_run;
   parts.searchLimit.value = settings.search_limit;
   parts.noWebsite.checked = settings.only_without_website;
@@ -186,23 +167,6 @@ function renderSettings(data) {
   parts.senderState.textContent = senderNote(data);
 }
 
-function renderAutopilotForm(data) {
-  parts.cityList.innerHTML = "";
-  data.cities.forEach((city) => {
-    const option = element("option");
-    option.value = city.name;
-    option.label = city.country + ", " + city.language;
-    parts.cityList.append(option);
-  });
-  parts.tradeList.innerHTML = "";
-  data.trades.forEach((trade) => {
-    const option = element("option");
-    option.value = trade;
-    parts.tradeList.append(option);
-  });
-  parts.builderNote.textContent = builderNote(data);
-}
-
 function ensureAutopilot() {
   if (autopilot.data) return Promise.resolve();
   if (!autopilot.loading) {
@@ -217,77 +181,10 @@ async function loadAutopilot() {
   try {
     autopilot.data = await requestJson("/api/autopilot");
     renderSettings(autopilot.data);
-    renderAutopilotForm(autopilot.data);
     await loadRuns(autopilot.data.running);
   } catch (error) {
-    say(parts.status, error.message, true);
-  }
-}
-
-function citiesFromSetting() {
-  const data = autopilot.data;
-  const region = data.settings.cities_from;
-  return data.cities.filter((city) => {
-    if (region === "us") return city.country === "United States";
-    if (region === "english") return city.language === "English";
-    if (region === "europe") return city.region === "europe";
-    return true;
-  });
-}
-
-function pickRandomCity() {
-  const pool = citiesFromSetting();
-  if (!pool.length) {
-    say(parts.status, "The city list has nothing for this setting.", true);
-    return;
-  }
-  const city = pool[Math.floor(Math.random() * pool.length)];
-  parts.city.value = city.name;
-  say(parts.status, city.name + ", " + city.country + ". Sites in " + siteLanguageFor(city) + ".");
-}
-
-function siteLanguageFor(city) {
-  const chosen = autopilot.data.settings.site.language;
-  if (chosen.toLowerCase() !== "city") return chosen;
-  return city ? city.language : "the language spoken there";
-}
-
-function knownCity(text) {
-  const wanted = text.trim().toLowerCase();
-  return autopilot.data.cities.find((city) =>
-    [city.name].concat(city.aliases || []).some((name) => name.toLowerCase() === wanted)
-  );
-}
-
-async function startRun(event) {
-  event.preventDefault();
-  await ensureAutopilot();
-  const city = parts.city.value.trim();
-  if (!city) {
-    say(parts.status, "Type a city, or press Random city.", true);
-    return;
-  }
-  parts.start.disabled = true;
-  say(parts.status, "Starting.");
-  try {
-    const data = await requestJson("/api/autopilot/start", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ city, trade: parts.trade.value.trim() }),
-    });
-    const match = knownCity(city);
-    const fixed = autopilot.data.settings.site.language.toLowerCase() !== "city";
-    say(
-      parts.status,
-      match || fixed
-        ? "Sites in " + siteLanguageFor(match) + "."
-        : city + " is not in the city list, so the site language is decided while each brief is written."
-    );
-    await loadRuns(data.id);
-  } catch (error) {
-    say(parts.status, error.message, true);
-  } finally {
-    parts.start.disabled = false;
+    parts.runPanel.hidden = false;
+    parts.runMessage.textContent = error.message;
   }
 }
 
@@ -333,7 +230,7 @@ async function showRun(runId, quietly) {
     renderRun(run);
     schedulePoll(run);
   } catch (error) {
-    if (!quietly) say(parts.status, error.message, true);
+    if (!quietly) parts.runMessage.textContent = error.message;
   }
 }
 
@@ -349,11 +246,6 @@ function renderRun(run) {
   const label = run.state.charAt(0).toUpperCase() + run.state.slice(1);
   parts.runMessage.textContent = label + " · " + (run.message || "") + builderProblem;
   parts.runUsage.textContent = run.plan_usage || "";
-  parts.runStop.hidden = !ACTIVE_RUN_STATES.includes(run.state);
-  if (parts.runStop.hidden) {
-    parts.runStop.disabled = false;
-    parts.runStop.textContent = "Stop";
-  }
   const listed = [...parts.runSelect.options].find((option) => option.value === run.id);
   if (listed) listed.textContent = runLabel(run);
   renderCards(run);
@@ -426,19 +318,6 @@ function candidateCard(run, candidate) {
   }
   if (links.children.length) card.append(links);
 
-  if (candidate.resume) {
-    card.append(element("p", "field-label", "Open this Claude Code session in a terminal"));
-    card.append(commandRow(candidate.resume));
-  }
-
-  if (candidate.contacts && candidate.contacts.length) {
-    card.append(contactBlock(candidate.contacts));
-  }
-
-  if (candidate.messages && candidate.messages.length) {
-    candidate.messages.forEach((message) => card.append(messageBlock(message)));
-    card.append(sentRow(run, candidate));
-  }
   return card;
 }
 
@@ -504,38 +383,8 @@ function messageBlock(message) {
   return block;
 }
 
-function sentRow(run, candidate) {
-  const line = element("div", "sent-row");
-  const select = element("select");
-  autopilot.data.channels.forEach((channel) => {
-    const option = element("option", "", channel);
-    option.value = channel;
-    select.append(option);
-  });
-  const button = element("button", "secondary", "I sent it");
-  button.type = "button";
-  const note = element("span", "hint");
-  const sent = (candidate.sent || []).map((item) => item.channel + " on " + item.on);
-  note.textContent = sent.length ? "Logged: " + sent.join(", ") : "Nothing is logged until you say it was sent.";
-  button.addEventListener("click", async () => {
-    try {
-      const data = await requestJson("/api/autopilot/runs/" + encodeURIComponent(run.id) + "/sent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ place_id: candidate.place_id, channel: select.value }),
-      });
-      note.textContent = "Logged over " + select.value + " on " + data.sent_at + ". Follow up due " + data.follow_up_due + ".";
-    } catch (error) {
-      note.textContent = error.message;
-    }
-  });
-  line.append(select, button, note);
-  return line;
-}
-
 function settingsPayload() {
   return {
-    cities_from: parts.citiesFrom.value,
     sites_per_run: parts.sites.value,
     search_limit: parts.searchLimit.value,
     only_without_website: parts.noWebsite.checked,
@@ -576,8 +425,7 @@ async function saveSettings(event) {
       body: JSON.stringify(settingsPayload()),
     });
     renderSettings(autopilot.data);
-    renderAutopilotForm(autopilot.data);
-    say(parts.settingsStatus, "Saved. The next run uses these.");
+    say(parts.settingsStatus, "Saved. The next search uses these.");
   } catch (error) {
     say(parts.settingsStatus, error.message, true);
   }
@@ -607,25 +455,6 @@ async function checkBuilder() {
   }
 }
 
-async function stopRun() {
-  parts.runStop.disabled = true;
-  parts.runStop.textContent = "Stopping";
-  try {
-    await requestJson("/api/autopilot/stop", { method: "POST" });
-    setTimeout(() => showRun(autopilot.runId), 800);
-  } catch (error) {
-    say(parts.status, error.message, true);
-    parts.runStop.disabled = false;
-    parts.runStop.textContent = "Stop";
-  }
-}
-
-parts.form.addEventListener("submit", startRun);
-parts.random.addEventListener("click", async () => {
-  await ensureAutopilot();
-  pickRandomCity();
-});
 parts.runSelect.addEventListener("change", () => showRun(parts.runSelect.value));
-parts.runStop.addEventListener("click", stopRun);
 parts.settingsForm.addEventListener("submit", saveSettings);
 parts.builderCheck.addEventListener("click", checkBuilder);
