@@ -14,6 +14,8 @@ from datetime import datetime
 from pathlib import Path
 from urllib.parse import quote, quote_plus, urlparse
 
+import requests
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import build_brief
@@ -52,6 +54,11 @@ STACKS = {
     "astro": {"name": "Astro, built to static files", "needs_a_build": True},
     "vite": {"name": "Vite, built to static files", "needs_a_build": True},
 }
+
+REFERENCE_PHOTO = "reference/place.jpg"
+DESIGN_FIELDS = ["design_direction", "concept", "display_font", "primary_action"]
+PHOTO_ID = re.compile(r"_(\d+)\.(?:jpe?g|png|webp)", re.IGNORECASE)
+PHOTO_PAGES = {".html", ".css"}
 
 SITE_FLAGS = ["faq", "careers", "show_reviews", "animations", "ai_media"]
 SEARCH_FLAGS = ["only_without_website", "require_phone", "require_online_contact", "only_rated"]
@@ -346,6 +353,76 @@ def _photo_count(folder):
     return len(_read_json(Path(folder) / "sources.json").get("photos", []))
 
 
+def photos_on_built_sites(settings):
+    used = set()
+    for path in build_brief.output_dir(settings).glob("*/site/*"):
+        if path.suffix.lower() in PHOTO_PAGES:
+            used.update(PHOTO_ID.findall(path.read_text(encoding="utf-8", errors="replace")))
+    return used
+
+
+def add_photos(place_id, terms, settings):
+    lead, _ = build_brief.find_lead(place_id)
+    folder = stock_folder(lead["name"])
+    path = folder / "sources.json"
+    earlier = _read_json(path)
+    photos = earlier.get("photos", [])
+    known = photos_on_built_sites(settings).union(PHOTO_ID.findall(" ".join(photo["file"] for photo in photos)))
+    plan = {"business": lead["name"], "queries": {"hero": terms, "gallery": terms}}
+    try:
+        added = find_stock_photos.collect(plan, folder, settings, skip_ids=known)
+    except find_stock_photos.StockPhotoError as error:
+        raise AutopilotError(str(error))
+    _write_json(path, dict(earlier, business=lead["name"], photos=photos + added, source=earlier.get("source", "")))
+    return [photo["file"] for photo in added]
+
+
+def recent_designs(category, settings, root=None):
+    folder = answers_file("any", root).parent
+    if not folder.is_dir():
+        return []
+    newest_first = sorted(folder.glob("*.json"), key=lambda path: path.stat().st_mtime, reverse=True)
+    found = []
+    for path in newest_first:
+        answers = _read_json(path)
+        if answers.get("category") == category and answers.get("design_direction"):
+            found.append({key: answers.get(key, "") for key in DESIGN_FIELDS})
+    return found[: settings["design"]["recent_sites"]]
+
+
+def design_options(place_id, recent, settings):
+    design = settings["design"]
+    taken = {item["design_direction"] for item in recent}
+    fresh = [item for item in design["directions"] if item["name"] not in taken] or design["directions"]
+    return random.Random(place_id).sample(fresh, min(design["directions_offered"], len(fresh)))
+
+
+def font_options(place_id, recent, settings):
+    picker = random.Random(place_id)
+    taken = {item.get("display_font") for item in recent}
+    offered = []
+    for role, count in settings["design"]["fonts_offered"].items():
+        fonts = [font for font in settings["fonts"]["library"] if font["role"] == role and font["id"] not in taken]
+        offered += picker.sample(fonts, min(count, len(fonts)))
+    return [{key: font[key] for key in ("id", "name", "role", "feel")} for font in offered]
+
+
+def save_reference_photo(lead, settings):
+    url = (lead.get("reference_photo") or "").strip()
+    if not url:
+        return ""
+    target = project_folder(lead["name"], settings) / REFERENCE_PHOTO
+    if not target.exists():
+        try:
+            response = requests.get(url, timeout=30)
+            response.raise_for_status()
+        except requests.RequestException:
+            return ""
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(response.content)
+    return str(target)
+
+
 def prepare(place_id, city=None, trade="", settings=None, collect=None, on_event=None):
     settings = settings or lead_search.load_settings()
     opts = options(settings)
@@ -361,7 +438,7 @@ def prepare(place_id, city=None, trade="", settings=None, collect=None, on_event
         try:
             plan = _photo_plan(lead.get("category") or "", trade, lead["name"], settings)
             _lead_with_description(plan, lead, settings)
-            (collect or find_stock_photos.collect)(plan, folder, settings, on_event)
+            (collect or find_stock_photos.collect)(plan, folder, settings, on_event, photos_on_built_sites(settings))
         except find_stock_photos.StockPhotoError as error:
             raise AutopilotError(str(error))
 
@@ -384,7 +461,9 @@ def prepare(place_id, city=None, trade="", settings=None, collect=None, on_event
         answers["city"] = city["name"]
     if city.get("country"):
         answers["country"] = city["country"]
+    answers["category"] = lead.get("category", "")
     _write_json(path, answers)
+    recent = recent_designs(lead.get("category", ""), settings)
 
     return {
         "place_id": lead["place_id"],
@@ -400,6 +479,12 @@ def prepare(place_id, city=None, trade="", settings=None, collect=None, on_event
         "stack_needs_a_build": stack["needs_a_build"],
         "description": lead.get("description", ""),
         "review_notes": lead.get("review_notes", ""),
+        "phone": lead.get("phone", ""),
+        "order_link": lead.get("order_link", ""),
+        "reference_photo": save_reference_photo(lead, settings),
+        "design_options": design_options(lead["place_id"], recent, settings),
+        "recent_designs_in_this_trade": recent,
+        "fonts": font_options(lead["place_id"], recent, settings),
         "sender_name": settings["outreach"]["sender_name"],
         "sender_about": settings["outreach"]["sender_about"],
         "postal_address": settings["outreach"]["postal_address"],
@@ -1346,6 +1431,10 @@ def main():
     drop_command.add_argument("place_id", help="The place_id, or the business name")
     drop_command.add_argument("files", nargs="+", help="Paths as sources.json writes them, such as hero/hero_1.jpg")
 
+    photos_command = commands.add_parser("add-photos", help="Search more stock photographs for one business")
+    photos_command.add_argument("place_id", help="The place_id, or the business name")
+    photos_command.add_argument("terms", nargs="+", help="English photo search terms, such as cuban pastries")
+
     run_command = commands.add_parser("run", help="Search a city and build the best candidates")
     where = run_command.add_mutually_exclusive_group(required=True)
     where.add_argument("--city", help="The city to search")
@@ -1368,6 +1457,8 @@ def main():
             _print_json(prepare(arguments.place_id, city, arguments.trade, settings))
         elif arguments.action == "drop-photo":
             _print_json({"removed": drop_photos(arguments.place_id, arguments.files)})
+        elif arguments.action == "add-photos":
+            _print_json({"added": add_photos(arguments.place_id, arguments.terms, settings)})
         elif arguments.action == "check-builder":
             _print_json(check_builder(opts, settings))
         else:

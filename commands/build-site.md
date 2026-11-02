@@ -76,9 +76,16 @@ folder that holds `brief.md`:
 
 It checks the title, the description, the viewport, a single `<h1>`, the
 JSON-LD, every image path and alt text, and that no lorem ipsum or bracketed
-note is left. Fix
+note is left, no demo notice of its own, no template headings. Fix
 what it lists, then open the site, because no script can tell whether it looks
 right.
+
+Where `screenshots.executable` is set, this shows the whole page at phone and
+desktop width in `screens/phone.png` and `screens/desktop.png`:
+
+```
+{venv python} scripts/screenshot_site.py "{brief folder}"
+```
 
 Serve it through whatever local preview your tools offer. In Claude Code that
 is an entry in `.claude/launch.json` started with the preview tool. For a plain

@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import random
 import sys
 import time
 from pathlib import Path
@@ -148,7 +149,7 @@ def _room_left(taken_for_purpose, collected, options):
 
 def _take_next(candidates, query, purpose, out_dir, seen_ids, options, provider):
     for photo in candidates:
-        if photo["id"] in seen_ids or not _acceptable(photo, options):
+        if str(photo["id"]) in seen_ids or not _acceptable(photo, options):
             continue
 
         target = out_dir / purpose / "{}_{}.jpg".format(purpose, photo["id"])
@@ -158,7 +159,7 @@ def _take_next(candidates, query, purpose, out_dir, seen_ids, options, provider)
             continue
 
         width, height = image_tools.dimensions(target)
-        seen_ids.add(photo["id"])
+        seen_ids.add(str(photo["id"]))
         return {
             "file": str(target.relative_to(out_dir)).replace("\\", "/"),
             "purpose": purpose,
@@ -175,13 +176,14 @@ def _take_next(candidates, query, purpose, out_dir, seen_ids, options, provider)
     return None
 
 
-def collect(plan, out_dir, settings, on_event=None):
+def collect(plan, out_dir, settings, on_event=None, skip_ids=()):
     options = settings["stock_photos"]
     provider, key = _provider()
     out_dir = Path(out_dir)
+    shuffler = random.Random(plan.get("business", ""))
 
     collected = []
-    seen_ids = set()
+    seen_ids = {str(photo_id) for photo_id in skip_ids}
 
     for purpose, queries in plan["queries"].items():
         (out_dir / purpose).mkdir(parents=True, exist_ok=True)
@@ -198,7 +200,9 @@ def collect(plan, out_dir, settings, on_event=None):
                 if query not in candidates:
                     if on_event:
                         on_event('searching "{}" for {}'.format(query, purpose))
-                    candidates[query] = iter(SEARCHES[provider](query, key, options))
+                    found = list(SEARCHES[provider](query, key, options))
+                    shuffler.shuffle(found)
+                    candidates[query] = iter(found)
 
                 photo = _take_next(candidates[query], query, purpose, out_dir, seen_ids, options, provider)
                 if photo is None:

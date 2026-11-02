@@ -13,6 +13,24 @@ SKIPPED_FOLDERS = {"node_modules", ".astro", ".git"}
 CSS_URL = re.compile(r"url\(\s*['\"]?([^'\")]+?)['\"]?\s*\)")
 FILLER_TEXT = re.compile(r"lorem\s+ipsum", re.IGNORECASE)
 BRACKETED_NOTE = re.compile(r"\[[A-Za-z][^\]]*\]")
+OWN_DEMO_NOTICE = re.compile(
+    r"not (?:the|their) official[^.]*|this is a demo[^.]*|demo (?:site|preview)[^.]*|demo made for[^.]*", re.IGNORECASE
+)
+HIDDEN_CLASSES = {"visually-hidden", "sr-only"}
+GENERIC_HEADINGS = {
+    "about",
+    "about us",
+    "contact",
+    "contact us",
+    "faq",
+    "gallery",
+    "our services",
+    "questions",
+    "rating",
+    "reviews",
+    "services",
+    "testimonials",
+}
 NOT_A_FILE = ("#", "data:", "mailto:", "tel:", "javascript:", "sms:", "whatsapp:", "viber:")
 
 
@@ -144,6 +162,34 @@ def _visible_notes(soup):
     return ['Visible note left on the page: "{}"'.format(note) for note in BRACKETED_NOTE.findall(soup.get_text(" "))]
 
 
+def _own_demo_notice(soup):
+    found = OWN_DEMO_NOTICE.search(soup.get_text(" "))
+    if not found:
+        return []
+    return ['The page carries its own demo notice ("{}"). Publishing adds the bar, so remove it.'.format(found.group(0))]
+
+
+def _generic_headings(soup):
+    headings = [
+        " ".join(tag.get_text(" ").split())
+        for tag in soup.find_all("h2")
+        if not HIDDEN_CLASSES.intersection(tag.get("class") or [])
+    ]
+    return [
+        'The heading "{}" is a template label. Write what this business would say there.'.format(heading)
+        for heading in headings
+        if heading.lower().rstrip(".") in GENERIC_HEADINGS
+    ]
+
+
+def _reference_used(soup):
+    return [
+        "{} shows the reference photograph, which is never published: {}".format(kind, reference)
+        for kind, reference in _references(soup)
+        if "reference/" in reference
+    ]
+
+
 def check(folder):
     folder = Path(folder).expanduser()
     page = entry_page(folder)
@@ -154,7 +200,10 @@ def check(folder):
     site_root = page.parent
     problems = _head_problems(soup) + _structured_data_problems(soup) + _image_problems(soup)
     problems += _missing_files(page, soup, site_root)
+    problems += _reference_used(soup)
     problems += _visible_notes(soup)
+    problems += _own_demo_notice(soup)
+    problems += _generic_headings(soup)
 
     for path in _site_files(folder / "site"):
         if FILLER_TEXT.search(path.read_text(encoding="utf-8", errors="replace")):

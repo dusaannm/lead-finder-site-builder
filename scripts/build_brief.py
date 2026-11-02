@@ -7,6 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import add_fonts
 import lead_search
 import lead_store
 
@@ -310,10 +311,11 @@ def _animation_rule(answers):
             "and honour prefers-reduced-motion."
         )
     return (
-        "Use GSAP with ScrollTrigger, loaded locally rather than from a CDN. Keep it to "
-        "entrance reveals on scroll and one deliberate hero moment. Every animation must be "
-        "wrapped in gsap.matchMedia so prefers-reduced-motion disables it. Motion must never "
-        "delay reading the content."
+        "Use GSAP with ScrollTrigger, loaded locally rather than from a CDN. Keep it to one "
+        "deliberate hero moment and one or two effects that serve the idea of the site, such "
+        "as type sliding on scroll or a pinned image. Every animation must be wrapped in "
+        "gsap.matchMedia so prefers-reduced-motion disables it. Motion must never delay "
+        "reading the content."
     )
 
 
@@ -351,6 +353,52 @@ def _known_about(lead):
     return "\n".join(lines) or "- Nothing beyond the table above."
 
 
+def _chosen_fonts(answers):
+    keys = ("display_font", "body_font", "accent_font")
+    return [answers[key].strip() for key in keys if (answers.get(key) or "").strip()]
+
+
+def _direction_how(answers, settings):
+    wanted = (answers.get("design_direction") or "").strip()
+    return next((item["how"] for item in settings["design"]["directions"] if item["name"] == wanted), "")
+
+
+def _concept(answers, settings):
+    idea = (answers.get("concept") or "").strip()
+    if not idea:
+        return (
+            "**The idea of this site.** Decide one clear idea before writing any code: what "
+            "sets this place apart, and what real thing from its world the page can borrow "
+            "its form from."
+        )
+    how = _direction_how(answers, settings)
+    return "**The idea of this site.** {}{}".format(idea, " Layout direction: {}".format(how) if how else "")
+
+
+def _primary_action(lead, answers):
+    chosen = (answers.get("primary_action") or "").strip()
+    if chosen:
+        return chosen
+    if (lead.get("order_link") or "").strip():
+        return "Order online, linking to {}".format(lead["order_link"])
+    return "Whatever a customer of this trade really does next, such as getting directions or calling"
+
+
+def _font_rule(answers, settings):
+    chosen = _chosen_fonts(answers)
+    if not chosen:
+        return (
+            'Choose typefaces from `fonts.library` in `config.yaml` and run `scripts/add_fonts.py '
+            '"{folder}" {ids}`, then load `fonts.css` from `index.html`.'
+        )
+    known = add_fonts.catalogue(settings)
+    named = ['"{}", {}'.format(known[item]["name"], known[item]["fallback"]) for item in chosen if item in known]
+    return (
+        "`site/fonts.css` and `site/fonts/` already hold the typefaces. Link `fonts.css` from "
+        "`index.html` before `style.css` and use exactly these: {}.".format("; ".join(named))
+    )
+
+
 def _rating_cell(lead, answers):
     rating = str(lead.get("rating") or "").strip()
     if not rating:
@@ -379,6 +427,7 @@ def render_brief(lead, answers, assets_dir, settings):
 | Rating | {rating} |
 | Reviews | {review_count} |
 | Existing website | {website} |
+| Online ordering | {order_link} |
 | Website score | {website_score} |
 | Lead score | {score} |
 | Google Maps | {maps} |
@@ -463,8 +512,9 @@ job.
   contact details in a `<footer>`. Every image needs a real `alt` in
   {language}.
 - Colour contrast at least 4.5:1 for body text. Tap targets at least 44px.
-- No cookie banner, no analytics, no third party fonts loaded from a CDN. If a
-  display font is wanted, pick a system font stack instead.
+- No cookie banner, no analytics, and nothing loaded from another server, fonts
+  included.
+- Never add a notice that this is a demo. Publishing adds that bar on its own.
 
 **Language.** Every word the visitor reads is in {language}. Do not mix
 languages. Do not leave lorem ipsum anywhere — write real copy for this
@@ -481,7 +531,9 @@ person, or present them as testimonials.
 **What to invent and what not to.** Real, taken from the table above and never
 changed: {known_facts}. Not known: {unknown_facts}. Describe only products and
 qualities that "What is known" supports; where it says nothing, stay general
-rather than making up crusty loaves or family recipes. The page has to read as
+rather than making up crusty loaves or family recipes. Never read a fact out of
+the name: "2 Bros" does not prove two brothers or a van. Owners, family, history,
+years and equipment appear only when "What is known" states them. The page has to read as
 finished: no bracketed notes, no "Owner:" text, no empty lists and no section
 that exists only to be filled in later. Write around what is unknown, or leave
 that element out. List what the owner could add in a `<!-- -->` comment at the
@@ -490,29 +542,60 @@ bottom of `index.html`. Never invent a fake review or a fake person.
 **Sections, in this order.**
 
 {sections}
+{concept}
+
 **Style direction.** {style}
 
-Build the palette from that description{colour_hint}. Pick one accent colour
-and use it for every call to action, nothing else. Two typefaces at most.
-Generous whitespace, a consistent spacing scale, and a single border radius
-used everywhere.
+Build the palette from that description{colour_hint}. Pick one accent colour.
 
-**Design that does not look like a template.** Someone who has seen a hundred
-small business sites should be able to tell this one was made for this business.
+**Typefaces.** {font_rule}
 
-- Give the hero one clear idea. Keep the photograph bright and readable: place
-  the text on a calm part of the image, beside it, or on a solid panel, instead
-  of laying a dark wash over the whole picture.
-- Vary the layout from section to section. Do not stack row after row of three
-  equal cards. Mix a large image with text, an asymmetric grid, a full width
-  band, and a list set in large type.
-- Take the palette and the mood from the kind of place this is, so two
-  businesses in the same trade do not end up with the same brown and cream.
-- Add one memorable detail that belongs to this business, such as the hours set
-  like a shop door sign, or the signature products set large.
-- Use real hierarchy: one big type size, one small, and a lot of contrast
-  between them. Leave out anything that does not earn its place.
-- Keep the phone number and the directions one thumb away on a phone.
+**The main action.** {primary_action}. This is the one main button, in the hero
+and at the end of the page, and its label says exactly what happens. Every other
+contact detail stays a quiet link. A fixed bar at the bottom of a phone screen is
+only for a trade people call in an emergency.
+
+**Design: modern, sharp, and made for this place.** The bar is a site a small
+design studio would put in its portfolio, not a site from a website builder. How
+sharp it gets follows the vibe: a locksmith can be hard and dark, a Cuban bakery
+loud and full of colour, a tailor exact and quiet. It is never soft and safe.
+
+- Type carries the design. Set the display face very large on the first screen,
+  with tight line height and tight letter spacing, and keep a huge jump between
+  the biggest size and the body text. Use `clamp()` so it stays huge on a phone
+  without breaking a word.
+- Hard edges. Corners are square or almost square, 4px at most, unless the idea
+  of the site calls for something else. No pill buttons, no soft drop shadows, no
+  gradients, no cards floating on a pale page. Use hairlines, solid colour blocks,
+  overlap, and a visible grid.
+- Make one bold move and commit to it: an enormous word, a full colour section, a
+  picture that breaks the grid. A page with one strong idea beats a page of
+  tidy, equal parts.
+- Colour has a reason. A cream page with brown text and a red accent is the
+  default every cafe gets, so use it only when the idea of the site demands it.
+- Vary the layout from section to section, with sections of different widths and
+  heights. Never a row of three equal cards.
+- Keep photographs bright and readable: set text beside them or on a solid block,
+  not on a dark wash across the whole picture.
+- Add one memorable detail that belongs to this business and no other.
+- Sections earn their place. A cafe may need only four. The `faq` option allows
+  a FAQ, it does not demand one: build it only when customers have real questions,
+  as they do with a contractor and rarely do with a cafe. The same goes for a
+  gallery and for a list of steps.
+
+Leave out everything that gives a template away:
+
+- a tiny uppercase label above every heading
+- headings that only name the section, such as Gallery, Reviews, Rating, About,
+  Services or Questions
+- stock phrases such as "Good to know", "Come say hello", "Questions, answered",
+  "Three steps, no fuss" and "Quick answers"
+- a slogan laid over a band of photograph
+- the same fade-up on every section
+- emoji used as icons
+
+Read every sentence and ask whether it could sit on the site of another business
+in this trade. If it could, rewrite it around something true of this one.
 
 **Animation.** {animation_rule}
 
@@ -535,6 +618,7 @@ described in "Why this business".
         rating=_rating_cell(lead, answers),
         review_count=lead["review_count"] or "not available",
         website=lead["website"] or "none",
+        order_link=lead.get("order_link") or "none",
         website_score=lead["website_score"] or "not checked",
         score=lead["score"],
         maps=lead["google_maps_link"],
@@ -553,6 +637,9 @@ described in "Why this business".
         stack_rules=_stack_rules(answers),
         pitch=_pitch(lead, problems),
         animation_rule=_animation_rule(answers),
+        concept=_concept(answers, settings),
+        font_rule=_font_rule(answers, settings),
+        primary_action=_primary_action(lead, answers),
         colour_hint=(
             ", anchored on the brand colours {}".format(" ".join(colours))
             if colours
@@ -747,6 +834,12 @@ def create(place_id, answers, stock_dirs=None, target_root=None):
         ),
         encoding="utf-8",
     )
+
+    if _chosen_fonts(answers):
+        try:
+            add_fonts.add(project, _chosen_fonts(answers), settings)
+        except add_fonts.FontError as error:
+            raise BriefError(str(error))
 
     return {"folder": project, "lead": lead, "source_file": source_file, "images": copied}
 

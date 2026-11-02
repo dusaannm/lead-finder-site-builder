@@ -15,8 +15,8 @@ gosom:
   concurrency: 2
   language: en
   extract_emails: true
-  reviews_kept: 5
-  review_characters: 240
+  reviews_kept: 8
+  review_characters: 400
   timeout_minutes: 25
   inactivity_minutes: 3
   poll_seconds: 2
@@ -227,7 +227,7 @@ outreach:
     - instagram
 
 stock_photos:
-  search_results: 30
+  search_results: 60
   search_cache_hours: 24
   per_purpose: 4
   max_total: 20
@@ -709,6 +709,86 @@ gsap:
   files:
     - gsap.min.js
     - ScrollTrigger.min.js
+
+fonts:
+  url: "https://cdn.jsdelivr.net/fontsource/fonts/{family}@latest/latin-{weight}-normal.woff2"
+  library:
+    - {id: fraunces, name: Fraunces, role: display, weights: [400, 700], fallback: "Georgia, serif", feel: "soft, warm, slightly odd old style serif"}
+    - {id: instrument-serif, name: Instrument Serif, role: display, weights: [400], fallback: "Georgia, serif", feel: "slim, current, magazine serif"}
+    - {id: dm-serif-display, name: DM Serif Display, role: display, weights: [400], fallback: "Georgia, serif", feel: "high contrast, confident serif"}
+    - {id: bodoni-moda, name: Bodoni Moda, role: display, weights: [500, 700], fallback: "Georgia, serif", feel: "fashion house, razor thin contrast"}
+    - {id: cormorant-garamond, name: Cormorant Garamond, role: display, weights: [500, 700], fallback: "Georgia, serif", feel: "delicate, formal, old world"}
+    - {id: abril-fatface, name: Abril Fatface, role: display, weights: [400], fallback: "Georgia, serif", feel: "fat poster serif, loud and elegant"}
+    - {id: shrikhand, name: Shrikhand, role: display, weights: [400], fallback: "Georgia, serif", feel: "fat retro italic, sweet shop sign"}
+    - {id: yeseva-one, name: Yeseva One, role: display, weights: [400], fallback: "Georgia, serif", feel: "curvy, feminine, boutique"}
+    - {id: alfa-slab-one, name: Alfa Slab One, role: display, weights: [400], fallback: "Rockwell, serif", feel: "heavy slab, hardware store"}
+    - {id: zilla-slab, name: Zilla Slab, role: display, weights: [600, 700], fallback: "Rockwell, serif", feel: "friendly, sturdy slab"}
+    - {id: anton, name: Anton, role: display, weights: [400], fallback: "Impact, sans-serif", feel: "tall, tight, heavy poster"}
+    - {id: bebas-neue, name: Bebas Neue, role: display, weights: [400], fallback: "Impact, sans-serif", feel: "condensed capitals, street signage"}
+    - {id: oswald, name: Oswald, role: display, weights: [500, 700], fallback: "Impact, sans-serif", feel: "narrow gothic, newspaper and sport"}
+    - {id: barlow-condensed, name: Barlow Condensed, role: display, weights: [600, 700], fallback: "Impact, sans-serif", feel: "workwear, highway signs, trade vans"}
+    - {id: big-shoulders-display, name: Big Shoulders Display, role: display, weights: [700, 800], fallback: "Impact, sans-serif", feel: "industrial, American city, steel"}
+    - {id: archivo-black, name: Archivo Black, role: display, weights: [400], fallback: "Arial Black, sans-serif", feel: "blunt, heavy, no nonsense grotesque"}
+    - {id: bricolage-grotesque, name: Bricolage Grotesque, role: display, weights: [700, 800], fallback: "system-ui, sans-serif", feel: "quirky, hand tuned, contemporary"}
+    - {id: space-grotesk, name: Space Grotesk, role: display, weights: [500, 700], fallback: "system-ui, sans-serif", feel: "technical, sharp, a little nerdy"}
+    - {id: syne, name: Syne, role: display, weights: [700, 800], fallback: "system-ui, sans-serif", feel: "wide, arty, gallery"}
+    - {id: unbounded, name: Unbounded, role: display, weights: [600, 700], fallback: "system-ui, sans-serif", feel: "wide, round, futuristic and playful"}
+    - {id: sora, name: Sora, role: display, weights: [600, 700], fallback: "system-ui, sans-serif", feel: "clean, geometric, modern tech"}
+    - {id: outfit, name: Outfit, role: display, weights: [500, 700], fallback: "system-ui, sans-serif", feel: "friendly geometric, simple and fresh"}
+    - {id: pacifico, name: Pacifico, role: accent, weights: [400], fallback: "cursive", feel: "surf diner script, use for a word or two"}
+    - {id: caveat, name: Caveat, role: accent, weights: [600], fallback: "cursive", feel: "handwritten note, use for a word or two"}
+    - {id: ibm-plex-mono, name: IBM Plex Mono, role: accent, weights: [400, 500], fallback: "monospace", feel: "typewriter, invoices and labels"}
+    - {id: space-mono, name: Space Mono, role: accent, weights: [400, 700], fallback: "monospace", feel: "retro computer, odd and geometric"}
+    - {id: inter, name: Inter, role: body, weights: [400, 600], fallback: "system-ui, sans-serif", feel: "neutral, precise"}
+    - {id: dm-sans, name: DM Sans, role: body, weights: [400, 600], fallback: "system-ui, sans-serif", feel: "soft geometric"}
+    - {id: work-sans, name: Work Sans, role: body, weights: [400, 600], fallback: "system-ui, sans-serif", feel: "plain and practical"}
+    - {id: figtree, name: Figtree, role: body, weights: [400, 600], fallback: "system-ui, sans-serif", feel: "clean and friendly"}
+    - {id: manrope, name: Manrope, role: body, weights: [400, 600], fallback: "system-ui, sans-serif", feel: "modern, slightly technical"}
+    - {id: karla, name: Karla, role: body, weights: [400, 600], fallback: "system-ui, sans-serif", feel: "quirky grotesque"}
+    - {id: instrument-sans, name: Instrument Sans, role: body, weights: [400, 600], fallback: "system-ui, sans-serif", feel: "sharp, slightly narrow"}
+    - {id: lora, name: Lora, role: body, weights: [400, 600], fallback: "Georgia, serif", feel: "warm reading serif"}
+    - {id: newsreader, name: Newsreader, role: body, weights: [400, 600], fallback: "Georgia, serif", feel: "newspaper reading serif"}
+
+screenshots:
+  launcher: []
+  executable: ""
+  linux_paths: false
+  flags: ["--no-sandbox", "--disable-gpu", "--hide-scrollbars", "--force-prefers-reduced-motion", "--virtual-time-budget=5000"]
+  timeout_seconds: 90
+  max_tiles: 12
+  views:
+    phone: {width: 390, height: 844, columns: 6, tile_width: 300}
+    desktop: {width: 1280, height: 800, columns: 3, tile_width: 640}
+
+design:
+  recent_sites: 8
+  directions_offered: 3
+  fonts_offered: {display: 6, body: 4, accent: 2}
+  directions:
+    - name: poster
+      how: "The first screen is one enormous line of tightly set type that fills the width, with a hard edged photograph cropped beneath or behind it. Flat colour, no decoration."
+    - name: full-bleed
+      how: "Photographs run edge to edge and carry the page. Text sits on solid blocks cut into the image with hard corners, never on a dark wash."
+    - name: editorial
+      how: "Laid out like a magazine feature: a masthead, thin rules, columns of unequal width, a large headline, small captions and pull lines set big."
+    - name: board
+      how: "The first screen is what they sell, set large like a menu board or a price list without prices, and the page unfolds from that list instead of from a slogan."
+    - name: split
+      how: "A hard vertical split on desktop: one half holds a photograph or a colour that stays fixed while the other half scrolls. It stacks into strong full width blocks on a phone."
+    - name: cinematic
+      how: "A near black page, very high contrast, one vivid accent, photographs that glow against the dark, and long vertical rhythm between big statements."
+    - name: colour-block
+      how: "Each section is its own saturated flat colour with hard edges between them, and big type that changes colour with the section. Confident, almost graphic poster work."
+    - name: swiss
+      how: "A strict visible grid, one grotesque typeface at extreme sizes, numbered sections, hairlines, asymmetric white space and no ornament at all."
+    - name: collage
+      how: "Photographs overlap at hard angles with type crossing them and labels stuck on top, like a pinned up wall. Controlled, but alive."
+    - name: signage
+      how: "Built like street signage: a moving text strip, oversized numbers, the hours and the address set as large as the headline, and heavy condensed capitals."
+    - name: object
+      how: "The page takes the form of a real object from this trade, such as a receipt, a work order, a sewing tag or a stamped ticket, and that idea runs through every section."
+    - name: quiet
+      how: "Very sparse and precise: one big image at a time, small exact type, huge margins, and every element placed on purpose. Expensive by restraint."
 
 audit:
   enabled: true

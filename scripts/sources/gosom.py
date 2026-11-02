@@ -69,6 +69,11 @@ def _review_notes(row, options):
     return " | ".join(" ".join(text.split()) for text in kept)
 
 
+def _order_link(row):
+    links = [(item.get("link") or "").strip() for item in row.get("order_online") or []]
+    return next((link for link in links if link), "")
+
+
 def lead_from_row(row, quality, options):
     name = (row.get("title") or "").strip()
     place_id = (row.get("place_id") or "").strip()
@@ -92,6 +97,8 @@ def lead_from_row(row, quality, options):
         "category": _category(row),
         "description": _description(row),
         "review_notes": _review_notes(row, options),
+        "reference_photo": (row.get("thumbnail") or "").strip(),
+        "order_link": _order_link(row),
     }
     lead.update(lead_quality.split_website(row.get("web_site"), quality))
     return lead

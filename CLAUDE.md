@@ -113,8 +113,11 @@ files, writing in the output folder and `data/autopilot`, and running
 `scripts/*.py`. Keep `commands/autopilot.md` working inside that list: no other
 shell command, no web access, `scripts/autopilot.py drop-photo` instead of
 deleting files by hand, and `scripts/add_gsap.py` instead of fetching GSAP.
-`scripts/check_site.py` is the check it runs when no browser is there to look
-with. Several businesses build at once, `autopilot.builder.parallel` of them,
+`scripts/check_site.py` is the check it always runs, and
+`scripts/screenshot_site.py` is how it looks at the page with no browser of its
+own. Before the brief it writes a concept and chooses a layout direction from
+`design.directions` and typefaces from `fonts.library`, which `build_brief.py`
+copies into `site/fonts/` so nothing loads from a CDN. Several businesses build at once, `autopilot.builder.parallel` of them,
 so anything a run writes outside its own business folder goes through
 `Run.change` in `scripts/autopilot.py`, which holds the lock.
 
@@ -141,7 +144,9 @@ in English. Do not add co-author trailers.
 - Every published demo carries `noindex` and a visible bar saying it is not the
   official website of the business.
 - Site images come from Pexels or Pixabay, whichever has a key in `.env`, chosen
-  by trade from `stock_photos.plans` in `config.yaml`, or from the client.
+  by trade from `stock_photos.plans` in `config.yaml`, or from the client. The
+  Google Maps photograph saved as `reference/place.jpg` is only for the builder
+  to look at, and `scripts/check_site.py` refuses a page that shows it.
 - The monthly Google call limit in `config.yaml` stays below the free tier.
 - The only thing that reads Google Maps in bulk is `scripts/sources/gosom.py`,
   which the owner of this fork turned on knowingly in `config.local.yaml` and
