@@ -38,6 +38,10 @@ NOT_A_PROFILE = {
     "login",
     "hashtag",
     "tr",
+    "popular",
+    "fb-answers",
+    "directory",
+    "marketplace",
 }
 
 
@@ -54,14 +58,33 @@ def profile_link(url):
     if not domain:
         return "", ""
     parts = [part for part in urlparse(url).path.split("/") if part]
-    if not parts or parts[0].lower() in NOT_A_PROFILE:
+    if not parts or parts[0].lower() in NOT_A_PROFILE or parts == ["pages"]:
         return "", ""
-    return PROFILE_HOSTS[domain], "https://www.{}/{}/".format(domain, parts[0])
+    kept = parts[:3] if parts[0].lower() == "pages" else parts[:1]
+    return PROFILE_HOSTS[domain], "https://www.{}/{}/".format(domain, "/".join(kept))
 
 
 def _compact(text, generic_words=()):
     words = [word for word in lead_store.to_slug(text or "", "").split("-") if word not in generic_words]
     return "".join(words)
+
+
+def _distinctive_words(lead, options):
+    address = lead_store.to_slug(lead.get("address") or "", "").split("-")
+    skipped = set(options["generic_name_words"]) | set(options["trade_name_words"]) | set(address)
+    words = lead_store.to_slug(lead.get("name") or "", "").split("-")
+    return [word.rstrip("s") for word in words if word not in skipped and len(word) >= options["min_name_word"]]
+
+
+def is_their_profile(lead, url, options):
+    column, profile = profile_link(url)
+    if not column:
+        return False
+    handle = _compact(urlparse(profile).path)
+    if handle.isdigit():
+        return True
+    whole_name = _compact(lead.get("name"), options["generic_name_words"])
+    return whole_name in handle or any(word in handle for word in _distinctive_words(lead, options))
 
 
 def _own_mail_first(emails, site_host):
@@ -169,7 +192,7 @@ def read_results(lead, results, settings):
         if _is_official(url, name_key, options, quality):
             found.setdefault("website", "{}://{}/".format(urlparse(url).scheme, urlparse(url).netloc))
         column, profile = profile_link(url)
-        if column:
+        if column and is_their_profile(lead, url, options):
             found.setdefault(column, profile)
         emails.extend(EMAIL_IN_TEXT.findall(snippets))
     cleaned = lead_quality.clean_emails(emails, quality)
@@ -223,7 +246,11 @@ def lookup(lead, settings, root, api_key, place="", country=""):
     cache = _load_cache(root)
     entry = cache.get(lead["place_id"])
     if _is_fresh(entry, options):
-        return {column: value for column, value in entry.items() if column != "checked"}
+        return {
+            column: value
+            for column, value in entry.items()
+            if column != "checked" and (column not in PROFILE_HOSTS.values() or is_their_profile(lead, value, options))
+        }
     if not api_key or not options["enabled"]:
         return None
     if not usage.remaining(root, options["monthly_search_limit"], USAGE_NAME):

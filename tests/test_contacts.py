@@ -26,6 +26,45 @@ class ProfileLink(unittest.TestCase):
         self.assertEqual(contacts.profile_link("https://www.facebook.com/sharer.php?u=x"), ("", ""))
         self.assertEqual(contacts.profile_link("https://example.com/facebook"), ("", ""))
 
+    def test_site_sections_are_not_profiles(self):
+        self.assertEqual(contacts.profile_link("https://www.instagram.com/popular/bakery/"), ("", ""))
+        self.assertEqual(contacts.profile_link("https://www.facebook.com/fb-answers/"), ("", ""))
+        self.assertEqual(contacts.profile_link("https://www.facebook.com/pages/"), ("", ""))
+
+    def test_an_old_facebook_page_keeps_its_whole_address(self):
+        self.assertEqual(
+            contacts.profile_link("https://www.facebook.com/pages/Emmett-Automotive/164945877047335"),
+            ("facebook", "https://www.facebook.com/pages/Emmett-Automotive/164945877047335/"),
+        )
+
+
+class TheirProfile(unittest.TestCase):
+    options = SETTINGS["contacts"]
+    lead = {"name": "Diana Bakery", "address": "2328 NW 7th St, Miami, FL 33125"}
+
+    def test_a_handle_with_their_name_is_theirs(self):
+        self.assertTrue(contacts.is_their_profile(self.lead, "https://www.instagram.com/dianabakeryinc/", self.options))
+
+    def test_a_blogger_who_wrote_about_them_is_not(self):
+        self.assertFalse(contacts.is_their_profile(self.lead, "https://www.facebook.com/beyondsouthbeach/", self.options))
+
+    def test_the_city_in_a_name_proves_nothing(self):
+        lead = {"name": "Miami Bakery", "address": "1 Main St, Miami, FL 33125"}
+        self.assertFalse(contacts.is_their_profile(lead, "https://www.instagram.com/dbakers_miami/", self.options))
+
+    def test_a_numbered_page_cannot_be_judged_and_stays(self):
+        self.assertTrue(contacts.is_their_profile(self.lead, "https://www.facebook.com/61557244874009/", self.options))
+
+    def test_a_search_result_about_them_on_a_stranger_page_is_ignored(self):
+        results = [
+            {
+                "url": "https://www.facebook.com/beyondsouthbeach/posts/1",
+                "title": "Diana Bakery in Little Havana",
+                "description": "",
+            }
+        ]
+        self.assertEqual(contacts.read_results(self.lead, results, SETTINGS), {})
+
 
 class ContactsInHtml(unittest.TestCase):
     def test_reads_mail_links_text_and_profiles(self):

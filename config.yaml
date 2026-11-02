@@ -49,6 +49,8 @@ contacts:
     - co
     - corp
     - company
+  min_name_word: 3
+  trade_name_words: [and, alteration, alterations, auto, bakery, barber, beauty, cafe, care, cleaning, coffee, contractor, contractors, custom, electric, florist, grooming, hair, heating, house, key, locksmith, nail, nails, pet, pizza, plumbing, repair, restaurant, roasters, roofing, salon, service, services, shop, spa, studio, tailor, tailors]
   directory_hosts:
     - yellowpages.com
     - mapquest.com
