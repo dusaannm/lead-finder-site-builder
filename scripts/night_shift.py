@@ -127,6 +127,7 @@ def shift(hours, most_sites, settings, say, rng=None):
         if stop_file().exists():
             say("Stop file found.")
             break
+        settings["autopilot"]["sites_per_run"] = min(opts["sites_per_run"], most_sites - built)
         try:
             run = _one_search(settings, opts, say, rng)
         except Exception as error:
