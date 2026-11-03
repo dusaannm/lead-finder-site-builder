@@ -126,7 +126,6 @@ def _one_search(settings, opts, say, stop_event, rng=None):
 def shift(hours, most_sites, settings, say, rng=None):
     options = settings["night"]
     settings["autopilot"]["keep_awake"] = False
-    opts = autopilot.options(settings)
     endless = not hours and not most_sites
     deadline = time.monotonic() + hours * 3600 if hours else float("inf")
     most_sites = most_sites or float("inf")
@@ -138,6 +137,7 @@ def shift(hours, most_sites, settings, say, rng=None):
         if stop_file().exists():
             say("Stop file found.")
             break
+        opts = autopilot.options(settings)
         settings["autopilot"]["sites_per_run"] = min(opts["sites_per_run"], most_sites - built)
         try:
             run = _one_search(settings, opts, say, stop_event, rng)

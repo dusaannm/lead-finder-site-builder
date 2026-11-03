@@ -87,6 +87,19 @@ class Cities(unittest.TestCase):
         self.assertNotEqual(night_shift.pair_key(maine, "barber"), night_shift.pair_key(oregon, "barber"))
 
 
+class SavedSettings(unittest.TestCase):
+    def test_saving_keeps_the_choices_and_leaves_the_region_alone(self):
+        with tempfile.TemporaryDirectory() as folder:
+            settings = json.loads(json.dumps(SETTINGS))
+            settings["autopilot"]["cities_from"] = "europe"
+            payload = {"sites_per_run": "2", "only_without_website": True, "deploy": False, "trades": ["bakery"]}
+            autopilot.save(payload, settings, folder)
+            with mock.patch.object(autopilot, "settings_file", return_value=autopilot.settings_file(folder)):
+                opts = autopilot.options(settings)
+            self.assertEqual((opts["sites_per_run"], opts["deploy"], opts["trades"]), (2, False, ["bakery"]))
+            self.assertEqual(opts["cities_from"], "europe")
+
+
 class Stopping(unittest.TestCase):
     @unittest.skipUnless(os.name == "nt", "a wrapper process is how Claude Code starts on Windows")
     def test_a_builder_behind_a_wrapper_ends_too(self):

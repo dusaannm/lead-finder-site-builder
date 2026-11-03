@@ -60,7 +60,7 @@ PHOTO_ID = re.compile(r"_(\d+)\.(?:jpe?g|png|webp)", re.IGNORECASE)
 PHOTO_PAGES = {".html", ".css"}
 
 SITE_FLAGS = ["faq", "careers", "show_reviews", "animations", "ai_media"]
-SEARCH_FLAGS = ["only_without_website", "require_phone", "require_online_contact", "only_rated", "deploy"]
+RUN_FLAGS = ["only_without_website", "require_phone", "require_online_contact", "only_rated", "deploy"]
 BUILDER_FIELDS = ["command", "model", "timeout_minutes", "parallel", "effort"]
 EFFORTS = {
     "": "Claude Code's own default",
@@ -227,7 +227,6 @@ def save(payload, settings=None, root=None):
         "search_limit": cleaned["search_limit"],
         "min_rating": cleaned["min_rating"],
         "min_reviews": cleaned["min_reviews"],
-        "cities_from": cleaned["cities_from"],
         "trades": cleaned["trades"],
         "site": cleaned["site"],
         "builder": {key: cleaned["builder"][key] for key in BUILDER_FIELDS},
