@@ -134,6 +134,24 @@ class Autopilot(unittest.TestCase):
             self.assertEqual(len(lines), 2)
             self.assertEqual(shift_control.built_so_far(lines), 2)
 
+    def write_finished_run(self, folder, started):
+        shift = Path(folder) / "data" / "autopilot"
+        shift.mkdir(parents=True)
+        (shift / "night.log").write_text("1 Shift starts: a\n2 Shift ends: b\n", encoding="utf-8")
+        (shift / "shift.json").write_text(json.dumps({"pid": 1, "started": started}), encoding="utf-8")
+
+    def test_a_finished_run_is_off_even_when_its_process_number_was_reused(self):
+        with tempfile.TemporaryDirectory() as folder:
+            self.write_finished_run(folder, "2020-01-01T00:00:00")
+            with mock.patch.object(shift_control, "is_alive", return_value=True):
+                self.assertFalse(shift_control.status(SETTINGS, folder)["running"])
+
+    def test_a_run_just_started_is_on_before_its_first_log_line(self):
+        with tempfile.TemporaryDirectory() as folder:
+            self.write_finished_run(folder, "2999-01-01T00:00:00")
+            with mock.patch.object(shift_control, "is_alive", return_value=True):
+                self.assertTrue(shift_control.status(SETTINGS, folder)["running"])
+
     def test_the_way_it_ended_is_read_from_the_log(self):
         self.assertEqual(shift_control.how_it_ended([]), "")
         self.assertEqual(shift_control.how_it_ended(["Shift starts: a"]), "crashed")

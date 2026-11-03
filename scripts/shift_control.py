@@ -45,7 +45,7 @@ def _load_record(root=None):
 def is_alive(pid):
     if os.name == "nt":
         found = subprocess.run(["tasklist", "/FI", "PID eq {}".format(pid), "/NH"], capture_output=True, text=True)
-        return str(pid) in found.stdout
+        return str(pid) in found.stdout and "python" in found.stdout.lower()
     try:
         os.kill(pid, 0)
     except OSError:
@@ -60,6 +60,13 @@ def latest_lines(root=None):
     lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
     starts = [number for number, line in enumerate(lines) if SHIFT_START in line]
     return lines[starts[-1]:] if starts else []
+
+
+def _log_says_it_ended(record, lines, root=None):
+    if not lines or SHIFT_END not in lines[-1] or not record.get("started"):
+        return False
+    written = (night_shift.stop_file(root).parent / LOG_FILE).stat().st_mtime
+    return written >= datetime.fromisoformat(record["started"]).timestamp()
 
 
 def built_so_far(lines):
@@ -103,8 +110,8 @@ def _chosen_region(record, settings):
 def status(settings=None, root=None):
     settings = settings or lead_search.load_settings()
     record = _load_record(root)
-    running = bool(record.get("pid")) and is_alive(record["pid"])
     lines = latest_lines(root) if record else []
+    running = bool(record.get("pid")) and is_alive(record["pid"]) and not _log_says_it_ended(record, lines, root)
     return {
         "running": running,
         "stopping": running and night_shift.stop_file(root).exists(),
@@ -127,6 +134,7 @@ def start(region, settings=None, root=None):
         raise ShiftError("Choose USA, Europe or both.")
     if status(settings, root)["running"]:
         raise ShiftError("The autopilot is already on.")
+    night_shift.stop_file(root).unlink(missing_ok=True)
     script = Path(__file__).resolve().parent / "night_shift.py"
     process = subprocess.Popen(
         [sys.executable, "-X", "utf8", str(script), "--sites", "0", "--hours", "0", "--region", region],
