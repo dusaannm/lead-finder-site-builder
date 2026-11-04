@@ -1580,6 +1580,48 @@ button.mail-head:hover {
   gap: 10px;
 }
 
+.mail-missing-hint {
+  margin: -6px 0 14px;
+}
+
+.mail-missing-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 14px;
+  padding: 11px 13px 0;
+}
+
+.mail-missing-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mail-missing-links .button {
+  height: 34px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+.mail-missing-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 13px 11px;
+}
+
+.mail-missing-form input {
+  flex: 1;
+  min-width: 200px;
+}
+
+.mail-entry > .status-line {
+  display: block;
+  padding: 0 13px 11px;
+}
+
 @media (max-width: 1180px) {
   .mail-split {
     grid-template-columns: minmax(0, 1fr);

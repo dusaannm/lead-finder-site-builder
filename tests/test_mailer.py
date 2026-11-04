@@ -153,6 +153,32 @@ class Queue(unittest.TestCase):
         self.assertNotIn("pages.dev", found[0]["body"])
 
 
+class MissingEmails(unittest.TestCase):
+    def test_ready_sites_without_an_email_are_listed_until_given_up(self):
+        with tempfile.TemporaryDirectory() as folder:
+            found = gathered(site("p1"), site("p2"), site("p3", stage="contacted"), emails={"p1": "", "p2": "x@shop.com", "p3": ""})
+            found["businesses"]["p1"]["facebook"] = "https://www.facebook.com/bakery/"
+            listed = mailer.missing_emails(found, [], settings(), folder)
+            self.assertEqual([item["place_id"] for item in listed], ["p1"])
+            self.assertEqual(listed[0]["facebook"], "https://www.facebook.com/bakery/about")
+            self.assertIn("Albany", listed[0]["search"])
+            mailer.mark_no_email("p1", folder)
+            self.assertEqual(mailer.missing_emails(found, [], settings(), folder), [])
+
+    def test_a_pasted_email_is_saved_on_the_lead(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "data" / "leads_bakery.csv"
+            mailer.lead_store.save(path, [dict(dict.fromkeys(mailer.lead_store.COLUMNS, ""), place_id="p1", name="Bakery")])
+            self.assertEqual(mailer.save_email("p1", " Owner@Bakery.com ", folder), "owner@bakery.com")
+            self.assertEqual(mailer.lead_store.load_rows(path)[0]["email"], "owner@bakery.com")
+            with self.assertRaises(mailer.MailError):
+                mailer.save_email("p1", "not an email", folder)
+
+    def test_the_town_comes_out_of_both_address_styles(self):
+        self.assertEqual(mailer.town("1 Main St, Albany, NY 12207, United States"), "Albany")
+        self.assertEqual(mailer.town("Rua 1, 4000-062 Porto, Portugal"), "Porto")
+
+
 class Answers(unittest.TestCase):
     options = settings()["mailer"]
     rows = [sent_row(), sent_row(kind=mailer.FOLLOW_UP)]

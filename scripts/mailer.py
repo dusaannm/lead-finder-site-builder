@@ -82,6 +82,10 @@ def _skipped_path(root=None):
     return _folder(root) / "skipped.json"
 
 
+def _no_email_path(root=None):
+    return _folder(root) / "no_email.json"
+
+
 def _activity_path(root=None):
     return _folder(root) / "mailer.log"
 
@@ -598,6 +602,65 @@ def skip(place_id, root=None):
         _write_json(_skipped_path(root), sorted(skipped(root) | {place_id}))
 
 
+def no_email(root=None):
+    return set(_read_json(_no_email_path(root), []))
+
+
+def mark_no_email(place_id, root=None):
+    with _locked(root):
+        _write_json(_no_email_path(root), sorted(no_email(root) | {place_id}))
+
+
+def save_email(place_id, value, root=None):
+    address = first_address(value)
+    if not address:
+        raise MailError("That is not an email address.")
+    saved = False
+    for path, rows in dashboard.lead_files(root or ROOT):
+        if any(row["place_id"] == place_id for row in rows):
+            saved = lead_store.update_fields(path, place_id, {"email": address}) or saved
+    if not saved:
+        raise MailError("That business is not in any saved search.")
+    return address
+
+
+def town(address):
+    parts = [part.strip() for part in (address or "").split(",")]
+    if len(parts) >= 3 and parts[-1] in ("United States", "USA"):
+        return parts[-3]
+    return re.sub(r"[\d-]+", "", parts[-2]).strip() if len(parts) >= 2 else ""
+
+
+def _about_page(facebook):
+    if not facebook:
+        return ""
+    return facebook + ("&sk=about" if "?" in facebook else ("" if facebook.endswith("/") else "/") + "about")
+
+
+def missing_emails(gathered, rows, settings, root=None):
+    mailed = {row["place_id"] for row in rows}
+    given_up = no_email(root)
+    missing = []
+    for site in gathered["sites"]:
+        lead = gathered["businesses"].get(site["place_id"], {})
+        if site["stage"] != "ready" or not site["place_id"] or site["place_id"] in mailed | given_up:
+            continue
+        if first_address(lead.get("email")) or not (site["live_url"] and site["live_public"]):
+            continue
+        place = place_of(site, settings)
+        missing.append({
+            "place_id": site["place_id"],
+            "name": site["name"],
+            "where": place["label"] if place else "",
+            "address": site["address"],
+            "facebook": _about_page((lead.get("facebook") or "").strip()),
+            "instagram": (lead.get("instagram") or "").strip(),
+            "search": autopilot._search_link(site["name"], town(site["address"]), "email"),
+        })
+    missing.sort(key=lambda item: (not item["facebook"], not item["instagram"], item["name"]))
+    return missing
+
+
 def wanted(root=None, today=None):
     current = control(root)
     return bool(current["on"] or current["send_now"] == (today or date.today()).isoformat())
@@ -743,12 +806,7 @@ def overview(settings, root=None, gathered=None):
     status = _read_json(_status_path(root), {})
     inbox = _read_json(_inbox_path(root), {})
     firsts = [row for row in rows if row["kind"] == FIRST]
-    mailed = {row["place_id"] for row in rows}
-    without_email = [
-        site for site in gathered["sites"]
-        if site["stage"] == "ready" and site["place_id"] not in mailed
-        and not first_address(gathered["businesses"].get(site["place_id"], {}).get("email"))
-    ]
+    missing = missing_emails(gathered, rows, settings, root)
     working = worker_alive(settings, root)
     user, _ = credentials()
     return {
@@ -773,8 +831,9 @@ def overview(settings, root=None, gathered=None):
             "replied": sum(1 for row in firsts if row["answer"] == REPLIED),
             "opted_out": sum(1 for row in firsts if row["answer"] == OPTED_OUT),
             "bounced": sum(1 for row in firsts if row["answer"] == BOUNCED),
-            "without_email": len(without_email),
+            "without_email": len(missing),
         },
+        "missing": missing,
         "queue": [_queue_view(item, moment) for item in items[: options["shown_in_queue"]]],
         "sent": sorted(rows, key=lambda row: row["sent_at"], reverse=True)[: options["shown_sent"]],
         "inbox": inbox.get("messages", []),

@@ -44,6 +44,9 @@ const mailParts = {
   queueNote: document.getElementById("mail-queue-note"),
   sent: document.getElementById("mail-sent"),
   sentNote: document.getElementById("mail-sent-note"),
+  missingCard: document.getElementById("mail-missing-card"),
+  missing: document.getElementById("mail-missing"),
+  missingNote: document.getElementById("mail-missing-note"),
   navReplies: document.getElementById("nav-replies"),
 };
 
@@ -95,9 +98,6 @@ function renderMailPanel(data) {
 
   const problems = [];
   if (!data.set_up) problems.push("Add ZOHO_SMTP_USER and ZOHO_SMTP_PASSWORD to .env, and the mail servers to config.local.yaml.");
-  if (data.counts.without_email) {
-    problems.push(count(data.counts.without_email, "ready site has", "ready sites have") + " no email address, so they stay on the Sites page for Viber, WhatsApp or Instagram.");
-  }
   if (!data.demo_address) problems.push("The links still point to pages.dev. Set publish.address once your own demo domain works.");
   mailParts.setup.hidden = !problems.length;
   mailParts.setup.textContent = problems.join(" ");
@@ -216,6 +216,57 @@ function sentEntry(row) {
   return entry;
 }
 
+function missingEntry(item) {
+  const entry = element("li", "mail-entry");
+  const line = element("div", "mail-missing-row");
+  const text = element("span", "mail-text");
+  text.append(element("strong", "", item.name), element("span", "", item.address));
+  const links = element("div", "mail-missing-links");
+  if (item.facebook) links.append(linkButton(item.facebook, "Facebook About", "external", "secondary"));
+  if (item.instagram) links.append(linkButton(item.instagram, "Instagram", "external", "secondary"));
+  links.append(linkButton(item.search, "Search", "search", "secondary"));
+  const form = element("form", "mail-missing-form");
+  const field = element("input");
+  field.type = "email";
+  field.placeholder = "name@example.com";
+  field.autocomplete = "off";
+  field.value = mail.drafts.get("email-" + item.place_id) || "";
+  field.addEventListener("input", () => mail.drafts.set("email-" + item.place_id, field.value));
+  const save = element("button", "", "Save");
+  save.type = "submit";
+  const none = element("button", "secondary", "None found");
+  none.type = "button";
+  const note = element("span", "status-line");
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    save.disabled = true;
+    try {
+      const data = await postJson("/api/mail/email", { place_id: item.place_id, email: field.value });
+      mail.drafts.delete("email-" + item.place_id);
+      document.activeElement.blur();
+      renderMail(data);
+    } catch (error) {
+      say(note, error.message, true);
+      save.disabled = false;
+    }
+  });
+  none.addEventListener("click", async () => {
+    none.disabled = true;
+    try {
+      const data = await postJson("/api/mail/no-email", { place_id: item.place_id });
+      document.activeElement.blur();
+      renderMail(data);
+    } catch (error) {
+      say(note, error.message, true);
+      none.disabled = false;
+    }
+  });
+  form.append(field, save, none);
+  line.append(text, links);
+  entry.append(line, form, note);
+  return entry;
+}
+
 function emptyItem(text) {
   return element("li", "attention-empty", text);
 }
@@ -234,6 +285,12 @@ function renderMail(data) {
     ...(data.queue.length ? data.queue.map(queueEntry) : [emptyItem("Nothing to send. Finished sites with an email join on their own.")])
   );
 
+  mailParts.missingCard.hidden = !data.missing.length;
+  mailParts.missingNote.textContent = count(data.missing.length, "site", "sites");
+  if (!document.activeElement || !mailParts.missing.contains(document.activeElement)) {
+    mailParts.missing.replaceChildren(...data.missing.map(missingEntry));
+  }
+
   const parts = [count(data.counts.sent, "business", "businesses")];
   if (data.counts.opted_out) parts.push(data.counts.opted_out + " said no");
   if (data.counts.bounced) parts.push(data.counts.bounced + " bounced");
@@ -245,7 +302,7 @@ function renderMail(data) {
 }
 
 async function loadMail(quietly) {
-  const typing = document.activeElement && document.activeElement.closest && document.activeElement.closest("#view-mail textarea");
+  const typing = document.activeElement && document.activeElement.closest && document.activeElement.closest("#view-mail textarea, #view-mail input");
   if (quietly && typing) {
     clearTimeout(mail.timer);
     mail.timer = setTimeout(() => loadMail(true), MAIL_POLL_MS);

@@ -330,6 +330,13 @@ every `mailer.inbox_minutes`: an answer stops the follow-up, an answer that says
 no marks the business declined, and a bounce is marked so it is never written
 to again. You read and answer the replies on the same page.
 
+Most businesses without a website have no email on Google Maps, but many show
+one on their Facebook or Instagram page, which no script may read. **Find the
+missing emails** on the same page lists every ready site without one, with
+buttons that open its Facebook About, its Instagram and a web search. Paste the
+email and press **Save**, and it joins the queue; **None found** takes the
+business off the list.
+
 Every email is plain text with one link, your name, your postal address from
 `outreach.postal_address` and a way to say no, which is what the US CAN-SPAM
 rules ask for. Some European countries, Germany first of all, do not allow

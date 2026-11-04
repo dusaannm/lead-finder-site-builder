@@ -335,6 +335,25 @@ def mail_skip():
     return _mail_page()
 
 
+@app.post("/api/mail/email")
+def mail_add_email():
+    payload = request.get_json(silent=True) or {}
+    try:
+        mailer.save_email(payload.get("place_id") or "", payload.get("email") or "")
+    except (mailer.MailError, lead_store.FileLocked) as error:
+        return jsonify({"error": str(error)}), 400
+    return _mail_page()
+
+
+@app.post("/api/mail/no-email")
+def mail_no_email():
+    place_id = (request.get_json(silent=True) or {}).get("place_id") or ""
+    if not place_id:
+        return jsonify({"error": "Unknown business."}), 400
+    mailer.mark_no_email(place_id)
+    return _mail_page()
+
+
 @app.post("/api/mail/reply")
 def mail_reply():
     payload = request.get_json(silent=True) or {}
