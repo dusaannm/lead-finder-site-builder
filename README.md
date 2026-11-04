@@ -297,8 +297,46 @@ and trade each time, until `night.hours` or `night.max_sites`. It pauses
 `night.give_up_after_failures` failed searches. It keeps the computer awake.
 Stop it with Ctrl-C, or by creating `data/autopilot/STOP`.
 
-It never sends anything. `http://localhost:5000/ready` lists what is waiting,
-with the demo link, the ways to reach each business and the messages.
+The night shift itself sends nothing. `http://localhost:5000/ready` lists what
+is waiting, with the demo link, the ways to reach each business and the
+messages. The emails go out from the Email page, described below.
+
+## Sending the emails
+
+The Email page in the browser sends the drafted email of every finished,
+published site whose business has an email address, from your own mailbox. Put
+the mailbox in `.env`:
+
+```
+ZOHO_SMTP_USER=you@yourdomain.com
+ZOHO_SMTP_PASSWORD=an app password from the mail provider
+```
+
+and its servers in `config.local.yaml`, under `mailer`: `smtp_host` and
+`imap_host`, plus `signature_extra`, a line such as your studio and domain that
+goes under your name. When your demos are on a domain of your own, put its
+address in `publish.address`, and the emails link there instead of pages.dev.
+
+**Turn on** sends on its own on weekdays, from `mailer.send_from_hour` to
+`mailer.send_until_hour` in each business's own time zone, a few minutes
+apart. The first day it sends `mailer.first_day` emails, then
+`mailer.daily_step` more each day that sent something, up to
+`mailer.daily_most`, so a new domain warms up slowly. **Send now** ignores the
+hours for the rest of today and stops at today's limit.
+
+Four days after the first email (`outreach.follow_up_days`), a business that
+has not answered gets one short follow-up in the same thread. The inbox is read
+every `mailer.inbox_minutes`: an answer stops the follow-up, an answer that says
+no marks the business declined, and a bounce is marked so it is never written
+to again. You read and answer the replies on the same page.
+
+Every email is plain text with one link, your name, your postal address from
+`outreach.postal_address` and a way to say no, which is what the US CAN-SPAM
+rules ask for. Some European countries, Germany first of all, do not allow
+unsolicited email to businesses at all; press **Do not send this one** on those
+in the queue. What was sent is in `data/mail_log.csv`, and the sender keeps
+running on its own after the browser closes, as long as the app has been
+started once since the computer started.
 
 ## Adding your details for the outreach messages
 
@@ -734,11 +772,12 @@ For scale, one search that pulls its full results costs 3 calls and returns up t
 
 ## Things it will not do, on purpose
 
-**It never sends a message.** It writes drafts, and you send them yourself from
-your own account. The project holds no password, token or login for email,
-Viber, WhatsApp or Instagram, and it should never be given one. You log a
-message as sent after you have actually sent it. The autopilot is no exception:
-it stops at the drafted message, and only your **I sent it** logs anything.
+**It sends only email, and only from the Email page.** The mailbox in `.env`
+is the one login it holds. It never sends on Viber, WhatsApp, Instagram or
+Facebook, which do not allow automated messages to strangers, and it should
+never be given a login for them. Those you send yourself and log with **I sent
+it**. The autopilot and the night shift send nothing; they stop at the drafted
+message.
 
 **Google's photographs never end up on a website you build.** Those pictures
 belong to the owners and the customers who took them. The tool never downloads

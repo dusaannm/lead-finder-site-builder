@@ -177,6 +177,11 @@ def fill_link(folder, url):
         path.write_text(text.replace(LINK_PLACEHOLDER, url), encoding="utf-8")
 
 
+def public_url(host, slug, options):
+    address = (options.get("address") or "").strip().rstrip("/")
+    return "{}/{}/".format(address or "https://" + host, slug)
+
+
 def publish(sites, settings, root=None):
     options = settings["publish"]
     if not options["enabled"]:
@@ -193,7 +198,7 @@ def publish(sites, settings, root=None):
         slug = slug_for(site["name"], site.get("city", ""))
         stage(site["folder"], pages_dir / slug, site["name"], sender, options)
         staged[site["place_id"]] = dict(
-            site, slug=slug, url="https://{}/{}/".format(host, slug), published_at=datetime.now().isoformat(timespec="seconds")
+            site, slug=slug, url=public_url(host, slug, options), published_at=datetime.now().isoformat(timespec="seconds")
         )
     if not staged:
         return {}

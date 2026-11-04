@@ -73,6 +73,143 @@ publish:
   cache_dir: ""
   timeout_minutes: 10
   demo_note: "Demo preview made by {sender} for {name}. This is not the official website of the business."
+  address: ""
+
+mailer:
+  smtp_host: ""
+  smtp_port: 465
+  imap_host: ""
+  imap_port: 993
+  timeout_seconds: 30
+  signature_extra: ""
+  first_day: 15
+  daily_step: 5
+  daily_most: 40
+  send_from_hour: 9
+  send_until_hour: 17
+  weekdays_only: true
+  gap_minutes_least: 4
+  gap_minutes_most: 9
+  retry_minutes: 30
+  idle_minutes: 5
+  tick_seconds: 20
+  heartbeat_seconds: 120
+  follow_up: true
+  follow_up_text: |
+    Hi,
+
+    Just a short follow-up on the website I made for {name}: {link}
+
+    I'm happy to change anything on it. If it's not for you, just reply "no" and I won't write again.
+
+    {signature}
+  inbox_minutes: 15
+  inbox_days: 30
+  inbox_kept: 100
+  text_kept: 6000
+  shown_in_queue: 60
+  shown_sent: 80
+  opt_out_words:
+    - unsubscribe
+    - remove me
+    - take me off
+    - not interested
+    - no thanks
+    - no thank you
+    - do not contact
+    - do not email
+    - don't contact
+    - don't email
+    - stop emailing
+  opt_out_whole:
+    - "no"
+    - stop
+  bounce_senders:
+    - mailer-daemon
+    - postmaster
+  time_zones:
+    no_summer_time: [AZ, HI]
+    us_states:
+      CT: -5
+      DC: -5
+      DE: -5
+      FL: -5
+      GA: -5
+      IN: -5
+      KY: -5
+      MA: -5
+      MD: -5
+      ME: -5
+      MI: -5
+      NC: -5
+      NH: -5
+      NJ: -5
+      NY: -5
+      OH: -5
+      PA: -5
+      RI: -5
+      SC: -5
+      VA: -5
+      VT: -5
+      WV: -5
+      AL: -6
+      AR: -6
+      IA: -6
+      IL: -6
+      KS: -6
+      LA: -6
+      MN: -6
+      MO: -6
+      MS: -6
+      ND: -6
+      NE: -6
+      OK: -6
+      SD: -6
+      TN: -6
+      TX: -6
+      WI: -6
+      AZ: -7
+      CO: -7
+      ID: -7
+      MT: -7
+      NM: -7
+      UT: -7
+      WY: -7
+      CA: -8
+      NV: -8
+      OR: -8
+      WA: -8
+      AK: -9
+      HI: -10
+    countries:
+      gb: 0
+      ie: 0
+      pt: 0
+      at: 1
+      be: 1
+      cz: 1
+      de: 1
+      dk: 1
+      es: 1
+      fr: 1
+      hr: 1
+      hu: 1
+      it: 1
+      lu: 1
+      mt: 1
+      nl: 1
+      pl: 1
+      se: 1
+      si: 1
+      sk: 1
+      bg: 2
+      cy: 2
+      ee: 2
+      fi: 2
+      gr: 2
+      lt: 2
+      lv: 2
+      ro: 2
 
 night:
   hours: 7

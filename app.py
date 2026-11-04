@@ -1,3 +1,5 @@
+import imaplib
+import smtplib
 import sys
 from pathlib import Path
 
@@ -11,6 +13,7 @@ import build_brief
 import dashboard
 import lead_search
 import lead_store
+import mailer
 import ready_list
 import shift_control
 import outreach_log
@@ -283,6 +286,65 @@ def autopilot_sent(run_id):
     return jsonify({"sent_at": row["sent_at"], "follow_up_due": row["follow_up_due"]})
 
 
+MAIL_FAILURES = (mailer.MailError, OSError, smtplib.SMTPException, imaplib.IMAP4.error)
+
+
+def _mail_page():
+    settings = lead_search.load_settings()
+    mailer.ensure_worker(settings)
+    return jsonify(mailer.overview(settings))
+
+
+@app.get("/api/mail")
+def mail_page():
+    return _mail_page()
+
+
+@app.post("/api/mail/switch")
+def mail_switch():
+    turn_on = bool((request.get_json(silent=True) or {}).get("on"))
+    if turn_on and not mailer.is_set_up(lead_search.load_settings()):
+        return jsonify({"error": "The mailbox is not set up yet."}), 400
+    mailer.set_control(on=turn_on, **({} if turn_on else {"send_now": ""}))
+    return _mail_page()
+
+
+@app.post("/api/mail/send-now")
+def mail_send_now():
+    if not mailer.is_set_up(lead_search.load_settings()):
+        return jsonify({"error": "The mailbox is not set up yet."}), 400
+    mailer.start_now()
+    return _mail_page()
+
+
+@app.post("/api/mail/check")
+def mail_check():
+    try:
+        mailer.check_inbox(lead_search.load_settings())
+    except MAIL_FAILURES as error:
+        return jsonify({"error": "Could not read the inbox: {}".format(error)}), 502
+    return _mail_page()
+
+
+@app.post("/api/mail/skip")
+def mail_skip():
+    place_id = (request.get_json(silent=True) or {}).get("place_id") or ""
+    if not place_id:
+        return jsonify({"error": "Unknown business."}), 400
+    mailer.skip(place_id)
+    return _mail_page()
+
+
+@app.post("/api/mail/reply")
+def mail_reply():
+    payload = request.get_json(silent=True) or {}
+    try:
+        mailer.reply(payload.get("uid") or "", payload.get("text") or "", lead_search.load_settings())
+    except MAIL_FAILURES as error:
+        return jsonify({"error": str(error)}), 400
+    return _mail_page()
+
+
 @app.get("/ready")
 def ready():
     return send_file(ready_list.write())
@@ -301,4 +363,5 @@ def built_site(relative):
 
 
 if __name__ == "__main__":
+    mailer.ensure_worker(lead_search.load_settings())
     app.run(host="127.0.0.1", port=5000, debug=False)

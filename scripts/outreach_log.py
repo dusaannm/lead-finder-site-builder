@@ -13,7 +13,7 @@ COLUMNS = [
     "notes",
 ]
 
-RESPONSES = ["", "interested", "declined", "no answer"]
+RESPONSES = ["", "interested", "declined", "no answer", "replied"]
 
 
 class OutreachError(Exception):

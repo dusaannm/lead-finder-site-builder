@@ -142,9 +142,15 @@ in English. Do not add co-author trailers.
 
 ## Boundaries that are deliberate, do not remove them
 
-- The tool never sends a message anywhere and holds no credentials for any
-  messaging account. It only drafts. The autopilot and the night shift
-  included: a message is logged as sent only when the person presses the button that says so.
+- The only thing that sends is `scripts/mailer.py`, and only email, from the
+  mailbox in `.env`, after the person turns it on or presses Send now on the
+  Email page. The owner of this fork decided that knowingly. It keeps the
+  daily ramp, the business's own working hours, one follow-up, the postal
+  address and the way to say no, and it never writes again to anyone who said
+  no or bounced. Nothing else sends: not the autopilot, not the night shift,
+  and nothing on Viber, WhatsApp, Instagram or Facebook, for which the tool
+  holds no login. Those are logged as sent only when the person presses the
+  button that says so.
 - Every published demo carries `noindex` and a visible bar saying it is not the
   official website of the business.
 - Site images come from Pexels or Pixabay, whichever has a key in `.env`, chosen

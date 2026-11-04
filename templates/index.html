@@ -38,6 +38,11 @@
       <span>Sites</span>
       <span class="nav-count" id="nav-ready" hidden></span>
     </button>
+    <button type="button" class="tab" data-view="mail">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M4 7l8 6 8-6"/></svg>
+      <span>Email</span>
+      <span class="nav-count" id="nav-replies" hidden></span>
+    </button>
     <button type="button" class="tab" data-view="leads">
       <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
       <span>Leads</span>
@@ -265,6 +270,76 @@
 
 </div>
 
+<div class="view" id="view-mail" hidden>
+
+<section class="card pilot" id="mailer">
+  <div class="pilot-top">
+    <div class="pilot-text">
+      <div class="pilot-title">
+        <span class="pilot-dot"></span>
+        <h2 id="mail-title">Automatic sending</h2>
+      </div>
+      <p class="pilot-line" id="mail-line"></p>
+    </div>
+    <div class="pilot-actions">
+      <button type="button" id="mail-now" class="secondary pilot-button">Send now</button>
+      <button type="button" id="mail-toggle" class="pilot-button">Turn on</button>
+    </div>
+  </div>
+  <div class="pilot-facts">
+    <div class="pilot-fact">
+      <span>Sent today</span>
+      <strong id="mail-today"></strong>
+      <div class="meter"><span class="meter-fill" id="mail-today-bar"></span></div>
+    </div>
+    <div class="pilot-fact">
+      <span>Next email</span>
+      <strong id="mail-next"></strong>
+    </div>
+    <div class="pilot-fact">
+      <span>Waiting to go out</span>
+      <strong id="mail-queued"></strong>
+    </div>
+    <div class="pilot-fact">
+      <span>Answers</span>
+      <strong id="mail-answers"></strong>
+    </div>
+  </div>
+</section>
+
+<p class="card mail-setup" id="mail-setup" hidden></p>
+
+<div class="split mail-split">
+  <section class="card">
+    <div class="card-head">
+      <h2>Inbox</h2>
+      <div class="card-tools">
+        <span class="card-note" id="mail-checked"></span>
+        <button type="button" class="secondary" id="mail-check">Check inbox</button>
+      </div>
+    </div>
+    <ul class="mail-list" id="mail-inbox"></ul>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Next up</h2>
+      <span class="card-note" id="mail-queue-note"></span>
+    </div>
+    <ul class="mail-list" id="mail-queue"></ul>
+  </section>
+</div>
+
+<section class="card">
+  <div class="card-head">
+    <h2>Sent</h2>
+    <span class="card-note" id="mail-sent-note"></span>
+  </div>
+  <ul class="mail-list" id="mail-sent"></ul>
+</section>
+
+</div>
+
 <div class="view" id="view-settings" hidden>
 
 <form id="settings-form">
@@ -406,6 +481,7 @@
 
 <script src="/static/app.js"></script>
 <script src="/static/autopilot.js"></script>
+<script src="/static/mail.js"></script>
 <script src="/static/dashboard.js"></script>
 </body>
 </html>

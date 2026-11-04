@@ -177,6 +177,7 @@ def site(folder, settings, known, log, country_codes, manifest):
         folder_label=_home_relative(folder),
         thumbnail=autopilot.site_url(picture, settings) if picture else "",
         place_id=place_id,
+        country_code=candidate["country_code"],
         status=lead.get("status", ""),
         stage=_stage(lead.get("status", ""), sent, times["messages_at"], times["built_at"]),
         site_url=autopilot.site_url(page, settings) if page else "",

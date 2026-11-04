@@ -1,6 +1,7 @@
 const VIEW_TITLES = {
   overview: ["Overview", "Turn it on and it finds, builds and publishes on its own."],
   sites: ["Sites", "Open a site, copy the message, send it, mark it."],
+  mail: ["Email", "The drafted emails go out on their own, and the answers land here."],
   leads: ["Leads", "Every business found, and a search of your own."],
   autopilot: ["Activity", "What the autopilot is doing and everything it has done."],
   settings: ["Settings", "What the autopilot looks for."],
@@ -190,6 +191,7 @@ function showView(name) {
   document.title = VIEW_TITLES[chosen][0] + " · Lead Finder";
   if (chosen === "overview") loadOverview();
   if (chosen === "sites") loadSites();
+  if (chosen === "mail") loadMail();
   if (chosen === "autopilot") loadHistory();
   if (chosen === "autopilot" || chosen === "settings") ensureAutopilot();
   if (chosen === "overview" || chosen === "autopilot") loadPilot();
@@ -606,7 +608,7 @@ function pilotLine(data) {
   if (data.ended === "weekly_limit") return "It stopped on its own at the weekly Claude limit, after " + sites + ".";
   if (data.ended === "crashed") return "It stopped unexpectedly after " + sites + ". Start it again.";
   if (data.ended) return "It built " + sites + " in the last run.";
-  return "It searches, builds and publishes until you stop it. Nothing is ever sent.";
+  return "It searches, builds and publishes until you stop it. Emails go out from the Email page.";
 }
 
 function renderRegions(data) {
@@ -694,3 +696,4 @@ window.addEventListener("hashchange", () => showView(location.hash.slice(1)));
 
 showView(location.hash.slice(1));
 if (board.view !== "overview") refreshNav();
+if (board.view !== "mail") loadMail(true);
